@@ -1,20 +1,19 @@
 package eventsource
 
 import (
+  "bytes"
   "fmt"
   "net/http"
 )
 
-var header string = `HTTP/1.1 200 OK
+const header string = `HTTP/1.1 200 OK
 Content-Type: text/event-stream
 Cache-Control: no-cache
 Connection: keep-alive
-Access-Control-Allow-Origin: %s
-Access-Control-Allow-Credentials: true
+Access-Control-Allow-Credentials: true`
 
-retry: 2000
+const body string = "\n\nretry: 2000\n"
 
-`
 func Handler (res http.ResponseWriter, req *http.Request) {
   hj, ok := res.(http.Hijacker)
   if !ok {
@@ -28,11 +27,20 @@ func Handler (res http.ResponseWriter, req *http.Request) {
     return
   }
 
-  origin := req.Header.Get("origin")
-  h := fmt.Sprintf(header, origin)
-  _, err = conn.Write([]byte(h))
+  _, err = conn.Write(initialResponse(req))
 
   if err != nil {
     conn.Close()
   }
+}
+
+func initialResponse(req *http.Request) []byte {
+  var buf bytes.Buffer
+  buf.WriteString(header)
+  if origin := req.Header.Get("origin"); origin != "" {
+    cors:= fmt.Sprintf("Access-Control-Allow-Origin: %s", origin)
+    buf.WriteString(cors)
+  }
+  buf.WriteString(body)
+  return buf.Bytes()
 }
