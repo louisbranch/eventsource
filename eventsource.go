@@ -18,7 +18,7 @@ Access-Control-Allow-Credentials: true`
 
 	BODY = "\n\nretry: 2000\n"
 
-	MAX_CLIENTS = 1
+	MAX_CLIENTS = 5
 )
 
 type server struct {
@@ -56,6 +56,17 @@ func (s *server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		s.remove(client)
 	}
+
+}
+
+func (s *server) Broadcast(content string) {
+	m := message{}
+	m.content = []byte(content + "\n")
+	var i uint
+	for i = 0; i < s.next; i++ {
+		c := s.clients[i]
+		c.in <- m
+	}
 }
 
 func (s *server) add(conn net.Conn) (*client, error) {
@@ -64,6 +75,7 @@ func (s *server) add(conn net.Conn) (*client, error) {
 		return nil, errors.New("Max connections reached, closing connection.")
 	}
 	c := newClient(s.next, conn, s)
+	go c.listen()
 	s.clients[s.next] = c
 	s.next++
 	return c, nil
@@ -79,8 +91,7 @@ func (s *server) remove(c *client) {
 		s.clients[index] = swap
 		swap.index = index
 	}
-	c.connection.Close()
-	c.connection = nil
+	c.deactivate()
 }
 
 func initialResponse(req *http.Request) []byte {
