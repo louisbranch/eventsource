@@ -54,18 +54,25 @@ func (s *server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	err = client.write(initialResponse(req))
 
 	if err != nil {
-		s.remove(client)
+		client.deactivate()
 	}
-
 }
 
 func (s *server) Broadcast(content string) {
 	m := message{}
 	m.content = []byte(content + "\n")
 	var i uint
+	inactives := []*client{}
 	for i = 0; i < s.next; i++ {
 		c := s.clients[i]
-		c.in <- m
+		if c.active {
+			c.in <- m
+		} else {
+			inactives = append(inactives, c)
+		}
+	}
+	for i := range inactives {
+		s.remove(inactives[i])
 	}
 }
 

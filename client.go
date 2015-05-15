@@ -32,6 +32,7 @@ func (c *client) deactivate() {
 	c.active = false
 	c.connection.Close()
 	c.connection = nil
+	close(c.in)
 }
 
 func (c *client) listen() {
