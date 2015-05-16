@@ -58,15 +58,18 @@ func (s *server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (s *server) Broadcast(content string) {
-	m := message{}
-	m.content = []byte(content + "\n")
+func (s *server) Broadcast(message, name string) {
+	e := event{
+		name:    name,
+		message: []byte(content + "\n"),
+	}
+
 	var i uint
 	inactives := []*client{}
 	for i = 0; i < s.next; i++ {
 		c := s.clients[i]
 		if c.active {
-			c.in <- m
+			c.in <- e
 		} else {
 			inactives = append(inactives, c)
 		}
