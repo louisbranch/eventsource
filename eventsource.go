@@ -17,17 +17,15 @@ Connection: keep-alive
 Access-Control-Allow-Credentials: true`
 
 	BODY = "\n\nretry: 2000\n"
-
-	MAX_CLIENTS = 5
 )
 
 type server struct {
-	clients [MAX_CLIENTS]*client
-	next    uint
+	maxClients int
+	clients    []*client
 }
 
-func New() *server {
-	s := server{}
+func New(maxClients int) *server {
+	s := server{maxClients: maxClients}
 	return &s
 }
 
@@ -61,12 +59,12 @@ func (s *server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 func (s *server) Broadcast(message, name string) {
 	e := event{
 		name:    name,
-		message: []byte(content + "\n"),
+		message: []byte(message + "\n"),
 	}
 
-	var i uint
 	inactives := []*client{}
-	for i = 0; i < s.next; i++ {
+
+	for i := range s.clients {
 		c := s.clients[i]
 		if c.active {
 			c.in <- e
@@ -74,34 +72,33 @@ func (s *server) Broadcast(message, name string) {
 			inactives = append(inactives, c)
 		}
 	}
-	for i := range inactives {
-		s.remove(inactives[i])
+
+	for j := range inactives {
+		s.remove(inactives[j])
 	}
 }
 
 func (s *server) add(conn net.Conn) (*client, error) {
-	if s.next >= MAX_CLIENTS {
+	l := len(s.clients)
+	if l >= s.maxClients {
 		conn.Close()
 		return nil, errors.New("Max connections reached, closing connection.")
 	}
-	c := newClient(s.next, conn, s)
+	c := newClient(l, conn, s)
+	s.clients = append(s.clients, c)
 	go c.listen()
-	s.clients[s.next] = c
-	s.next++
 	return c, nil
 }
 
 func (s *server) remove(c *client) {
-	last := s.next - 1
-	index := c.index
-	if index == last {
-		s.next = last
-	} else {
-		swap := s.clients[last]
-		s.clients[index] = swap
-		swap.index = index
+	l := len(s.clients) - 1
+	i := c.index
+	if i < l {
+		swap := s.clients[l]
+		s.clients[i] = swap
+		swap.index = i
 	}
-	c.deactivate()
+	s.clients = s.clients[:l]
 }
 
 func initialResponse(req *http.Request) []byte {

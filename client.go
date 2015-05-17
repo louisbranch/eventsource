@@ -7,19 +7,19 @@ import (
 
 type client struct {
 	active     bool
-	index      uint
+	index      int
 	connection net.Conn
 	server     *server
-	in         chan message
+	in         chan event
 }
 
-func newClient(index uint, conn net.Conn, s *server) *client {
+func newClient(index int, conn net.Conn, s *server) *client {
 	c := client{}
 	c.active = true
 	c.index = index
 	c.connection = conn
 	c.server = s
-	c.in = make(chan message, 10)
+	c.in = make(chan event, 10)
 	return &c
 }
 
@@ -37,11 +37,12 @@ func (c *client) deactivate() {
 
 func (c *client) listen() {
 	for {
-		m := <-c.in
+		e := <-c.in
 		c.connection.SetWriteDeadline(time.Now().Add(2 * time.Second))
-		err := c.write(m.content)
+		err := c.write(e.message)
 		if err != nil {
 			c.deactivate()
+			break
 		}
 	}
 }
