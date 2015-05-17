@@ -1,3 +1,6 @@
+// Package eventsource provides a simple implementation for Server-sent events,
+// an one-way stream to send data to browsers, see more at:
+// (https://developer.mozilla.org/en-US/docs/Server-sent_events)
 package eventsource
 
 import (
@@ -14,22 +17,29 @@ const (
 Content-Type: text/event-stream
 Cache-Control: no-cache
 Connection: keep-alive
-Access-Control-Allow-Credentials: true`
+Access-Control-Allow-Credentials: true
 
-	BODY = "\n\nretry: 2000\n"
+`
+	BODY = "retry: 2000\n"
 )
 
-type server struct {
+type Server struct {
 	maxClients int
 	clients    []*client
 }
 
-func New(maxClients int) *server {
-	s := server{maxClients: maxClients}
+// New returns a new eventsource server with the maximum number of clients
+// (connections) set.
+func New(maxClients int) *Server {
+	s := Server{maxClients: maxClients}
 	return &s
 }
 
-func (s *server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+// ServeHTTP implements the http handle interface.
+// If the connection supports hijacking, it sends an initial header to switch
+// to text/stream protocol and an initial body to retry after 2 seconds if the
+// connection drops.
+func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	hj, ok := res.(http.Hijacker)
 	if !ok {
 		http.Error(res, "webserver doesn't support hijacking", http.StatusInternalServerError)
@@ -56,7 +66,9 @@ func (s *server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (s *server) Broadcast(message, name string) {
+// Broadcast sends a message to all active clients connected.
+// TODO restrict the message to only the subscribed channels.
+func (s *Server) Broadcast(message, name string) {
 	e := event{
 		name:    name,
 		message: []byte(message + "\n"),
@@ -78,7 +90,9 @@ func (s *server) Broadcast(message, name string) {
 	}
 }
 
-func (s *server) add(conn net.Conn) (*client, error) {
+// add creates a new client for the connection and adds to the listening
+// clients list, unless the max clients has been reached.
+func (s *Server) add(conn net.Conn) (*client, error) {
 	l := len(s.clients)
 	if l >= s.maxClients {
 		conn.Close()
@@ -90,7 +104,9 @@ func (s *server) add(conn net.Conn) (*client, error) {
 	return c, nil
 }
 
-func (s *server) remove(c *client) {
+// remove removes a client from clients list.
+// Note: the slice memory is not reclaimed
+func (s *Server) remove(c *client) {
 	l := len(s.clients) - 1
 	i := c.index
 	if i < l {
@@ -101,6 +117,8 @@ func (s *server) remove(c *client) {
 	s.clients = s.clients[:l]
 }
 
+// initialResponse sends a header and body sent to client to establish a
+// text/stream connection with retry option.
 func initialResponse(req *http.Request) []byte {
 	var buf bytes.Buffer
 	buf.WriteString(HEADER)
