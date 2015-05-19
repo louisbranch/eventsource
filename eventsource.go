@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -53,6 +54,12 @@ func New(maxClients int) *Server {
 // to text/stream protocol and an initial body to retry after 2 seconds if the
 // connection drops.
 func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	channels := req.URL.Query().Get("channels")
+	if channels == "" {
+		http.Error(res, "channels list can't be blank", http.StatusBadRequest)
+		return
+	}
+
 	hj, ok := res.(http.Hijacker)
 	if !ok {
 		http.Error(res, "webserver doesn't support hijacking", http.StatusInternalServerError)
@@ -65,7 +72,7 @@ func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	client, err := s.add(conn)
+	client, err := s.add(conn, strings.Split(channels, ","))
 	if err != nil {
 		log.Println(err)
 		conn.Close()
@@ -79,27 +86,23 @@ func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// Broadcast sends a message to all active clients connected.
-// TODO restrict the message to only the subscribed channels.
-func (s *Server) Broadcast(name, message string, channels []string) {
-	e := event{
-		name:     name,
-		message:  message,
-		channels: channels,
-	}
-
+// Broadcast sends a message to all active clients connected that subscribed to
+// event's channel(s)
+func (s *Server) Broadcast(e event) {
 	inactives := []*client{}
 
 	for i := range s.clients {
 		c := s.clients[i]
-		if c.active {
+		if !c.active {
+			inactives = append(inactives, c)
+			close(c.in)
+			continue
+		}
+		if contains(e.channels, c.channels) {
 			select {
 			case c.in <- e:
 			default: //discard value
 			}
-		} else {
-			inactives = append(inactives, c)
-			close(c.in)
 		}
 	}
 
@@ -110,13 +113,13 @@ func (s *Server) Broadcast(name, message string, channels []string) {
 
 // add creates a new client for the connection and adds to the listening
 // clients list, unless the max clients has been reached.
-func (s *Server) add(conn net.Conn) (*client, error) {
+func (s *Server) add(conn net.Conn, channels []string) (*client, error) {
 	l := len(s.clients)
 	if l >= s.maxClients {
 		conn.Close()
 		return nil, errors.New("Max connections reached, closing connection.")
 	}
-	c := newClient(l, conn)
+	c := newClient(l, conn, channels)
 	s.clients = append(s.clients, c)
 	go c.listen()
 	return c, nil
@@ -149,4 +152,19 @@ func initialResponse(req *http.Request) []byte {
 	buf.WriteString(padding)
 	buf.WriteString(BODY)
 	return buf.Bytes()
+}
+
+// contains returns whether a string in a is also present in b
+func contains(a []string, b []string) bool {
+	match := false
+loop:
+	for i := range a {
+		for j := range b {
+			if a[i] == b[j] {
+				match = true
+				break loop
+			}
+		}
+	}
+	return match
 }

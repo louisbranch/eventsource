@@ -6,37 +6,39 @@ import (
 )
 
 type client struct {
-	active     bool
-	index      int
-	connection net.Conn
-	in         chan event
+	active   bool
+	index    int
+	conn     net.Conn
+	in       chan event
+	channels []string
 }
 
-func newClient(index int, conn net.Conn) *client {
+func newClient(index int, conn net.Conn, channels []string) *client {
 	c := client{}
 	c.active = true
 	c.index = index
-	c.connection = conn
+	c.conn = conn
+	c.channels = channels
 	c.in = make(chan event, 10)
 	return &c
 }
 
 func (c *client) write(msg []byte) error {
-	_, err := c.connection.Write(msg)
+	_, err := c.conn.Write(msg)
 	return err
 }
 
 func (c *client) deactivate() {
 	c.active = false
-	c.connection.Close()
-	c.connection = nil
+	c.conn.Close()
+	c.conn = nil
 }
 
 func (c *client) listen() {
 loop:
 	for {
 		e := <-c.in
-		c.connection.SetWriteDeadline(time.Now().Add(2 * time.Second))
+		c.conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
 		err := c.write(e.Bytes())
 		if err != nil {
 			c.deactivate()
