@@ -16,10 +16,8 @@ const (
 	HEADER = `HTTP/1.1 200 OK
 Content-Type: text/event-stream
 Cache-Control: no-cache
-Connection: keep-alive
-Access-Control-Allow-Credentials: true
+Connection: keep-alive`
 
-`
 	BODY = "retry: 2000\n"
 )
 
@@ -68,10 +66,11 @@ func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 // Broadcast sends a message to all active clients connected.
 // TODO restrict the message to only the subscribed channels.
-func (s *Server) Broadcast(message, name string) {
+func (s *Server) Broadcast(name, message string, channels []string) {
 	e := event{
-		name:    name,
-		message: []byte(message + "\n"),
+		name:     name,
+		message:  message,
+		channels: channels,
 	}
 
 	inactives := []*client{}
@@ -79,9 +78,13 @@ func (s *Server) Broadcast(message, name string) {
 	for i := range s.clients {
 		c := s.clients[i]
 		if c.active {
-			c.in <- e
+			select {
+			case c.in <- e:
+			default: //discard value
+			}
 		} else {
 			inactives = append(inactives, c)
+			close(c.in)
 		}
 	}
 
@@ -124,8 +127,10 @@ func initialResponse(req *http.Request) []byte {
 	buf.WriteString(HEADER)
 	if origin := req.Header.Get("origin"); origin != "" {
 		cors := fmt.Sprintf("Access-Control-Allow-Origin: %s", origin)
+		buf.WriteString("Access-Control-Allow-Credentials: true")
 		buf.WriteString(cors)
 	}
+	buf.WriteString("\n\n")
 	buf.WriteString(BODY)
 	return buf.Bytes()
 }

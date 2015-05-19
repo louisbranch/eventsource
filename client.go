@@ -32,17 +32,17 @@ func (c *client) deactivate() {
 	c.active = false
 	c.connection.Close()
 	c.connection = nil
-	close(c.in)
 }
 
 func (c *client) listen() {
+loop:
 	for {
 		e := <-c.in
 		c.connection.SetWriteDeadline(time.Now().Add(2 * time.Second))
-		err := c.write(e.message)
+		err := c.write(e.Bytes())
 		if err != nil {
 			c.deactivate()
-			break
+			break loop
 		}
 	}
 }
