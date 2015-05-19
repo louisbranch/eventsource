@@ -21,9 +21,24 @@ Connection: keep-alive`
 	BODY = "retry: 2000\n"
 )
 
+var padding string
+
 type Server struct {
 	maxClients int
 	clients    []*client
+}
+
+//init generates a padding payload to establish a text/stream connection on
+//Internet Explorer < 10. See
+//http://blogs.msdn.com/b/ieinternals/archive/2010/04/06/comet-streaming-in-internet-explorer-with-xmlhttprequest-and-xdomainrequest.aspx
+func init() {
+	var buf bytes.Buffer
+	buf.WriteByte(':')
+	for i := 0; i < 2048; i++ {
+		buf.WriteByte(' ')
+	}
+	buf.WriteByte('\n')
+	padding = buf.String()
 }
 
 // New returns a new eventsource server with the maximum number of clients
@@ -121,7 +136,7 @@ func (s *Server) remove(c *client) {
 }
 
 // initialResponse sends a header and body sent to client to establish a
-// text/stream connection with retry option.
+// text/stream connection with retry option and CORS enabled.
 func initialResponse(req *http.Request) []byte {
 	var buf bytes.Buffer
 	buf.WriteString(HEADER)
@@ -131,6 +146,7 @@ func initialResponse(req *http.Request) []byte {
 		buf.WriteString(cors)
 	}
 	buf.WriteString("\n\n")
+	buf.WriteString(padding)
 	buf.WriteString(BODY)
 	return buf.Bytes()
 }
