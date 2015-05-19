@@ -101,7 +101,7 @@ func (s *Server) add(conn net.Conn) (*client, error) {
 		conn.Close()
 		return nil, errors.New("Max connections reached, closing connection.")
 	}
-	c := newClient(l, conn, s)
+	c := newClient(l, conn)
 	s.clients = append(s.clients, c)
 	go c.listen()
 	return c, nil

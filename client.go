@@ -9,16 +9,14 @@ type client struct {
 	active     bool
 	index      int
 	connection net.Conn
-	server     *Server
 	in         chan event
 }
 
-func newClient(index int, conn net.Conn, s *Server) *client {
+func newClient(index int, conn net.Conn) *client {
 	c := client{}
 	c.active = true
 	c.index = index
 	c.connection = conn
-	c.server = s
 	c.in = make(chan event, 10)
 	return &c
 }
