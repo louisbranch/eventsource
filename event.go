@@ -2,28 +2,12 @@ package eventsource
 
 import (
 	"bytes"
-	"errors"
-	"net/url"
-	"strings"
 )
 
 type Event struct {
 	Name     string
 	Message  string
 	Channels []string
-}
-
-func ParseEventQuery(query url.Values) (Event, error) {
-	e := Event{}
-	message := query.Get("message")
-	if message == "" {
-		return e, errors.New("Event message can't be blank")
-	}
-
-	e.Message = message
-	e.Name = query.Get("event")
-	e.Channels = strings.Split(query.Get("channels"), ",")
-	return e, nil
 }
 
 func (e *Event) Bytes() []byte {
