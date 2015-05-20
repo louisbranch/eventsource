@@ -7,39 +7,34 @@ import (
 	"strings"
 )
 
-type event struct {
-	name     string
-	message  string
-	channels []string
+type Event struct {
+	Name     string
+	Message  string
+	Channels []string
 }
 
-func ParseEventUrl(query url.Values) (event, error) {
-	e := event{}
+func ParseEventQuery(query url.Values) (Event, error) {
+	e := Event{}
 	message := query.Get("message")
 	if message == "" {
 		return e, errors.New("Event message can't be blank")
 	}
 
-	channels := query.Get("channels")
-	if channels == "" {
-		return e, errors.New("Event channels can't be blank")
-	}
-
-	e.message = message
-	e.name = query.Get("event")
-	e.channels = strings.Split(channels, ",")
+	e.Message = message
+	e.Name = query.Get("event")
+	e.Channels = strings.Split(query.Get("channels"), ",")
 	return e, nil
 }
 
-func (e *event) Bytes() []byte {
+func (e *Event) Bytes() []byte {
 	var buf bytes.Buffer
-	if e.name != "" {
+	if e.Name != "" {
 		buf.WriteString("event: ")
-		buf.WriteString(e.name)
+		buf.WriteString(e.Name)
 		buf.WriteString("\n")
 	}
 	buf.WriteString("data: ")
-	buf.WriteString(e.message)
+	buf.WriteString(e.Message)
 	buf.WriteString("\n")
 	return buf.Bytes()
 }

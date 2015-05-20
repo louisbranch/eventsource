@@ -9,7 +9,7 @@ type client struct {
 	active   bool
 	index    int
 	conn     net.Conn
-	in       chan event
+	in       chan Event
 	channels []string
 }
 
@@ -19,7 +19,7 @@ func newClient(index int, conn net.Conn, channels []string) *client {
 	c.index = index
 	c.conn = conn
 	c.channels = channels
-	c.in = make(chan event, 10)
+	c.in = make(chan Event, 10)
 	return &c
 }
 

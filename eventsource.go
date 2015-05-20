@@ -54,12 +54,6 @@ func New(maxClients int) *Server {
 // to text/stream protocol and an initial body to retry after 2 seconds if the
 // connection drops.
 func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	channels := req.URL.Query().Get("channels")
-	if channels == "" {
-		http.Error(res, "channels list can't be blank", http.StatusBadRequest)
-		return
-	}
-
 	hj, ok := res.(http.Hijacker)
 	if !ok {
 		http.Error(res, "webserver doesn't support hijacking", http.StatusInternalServerError)
@@ -72,7 +66,9 @@ func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	client, err := s.add(conn, strings.Split(channels, ","))
+	channels := req.URL.Query().Get("channels")
+	chans := strings.Split(channels, ",")
+	client, err := s.add(conn, chans)
 	if err != nil {
 		log.Println(err)
 		conn.Close()
@@ -88,7 +84,7 @@ func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 // Broadcast sends a message to all active clients connected that subscribed to
 // event's channel(s)
-func (s *Server) Broadcast(e event) {
+func (s *Server) Broadcast(e Event) {
 	inactives := []*client{}
 
 	for i := range s.clients {
@@ -98,7 +94,7 @@ func (s *Server) Broadcast(e event) {
 			close(c.in)
 			continue
 		}
-		if contains(e.channels, c.channels) {
+		if contains(e.Channels, c.channels) {
 			select {
 			case c.in <- e:
 			default: //discard value
