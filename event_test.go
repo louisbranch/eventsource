@@ -11,7 +11,7 @@ func TestEventBytesWithName(t *testing.T) {
 		Name:    "test",
 		Message: "{id: 1}",
 	}
-	result := e.Bytes()
+	result := e.bytes()
 	if !bytes.Equal(expecting, result) {
 		t.Errorf("expected:\n%s\ngot:\n%s\n", expecting, result)
 	}
@@ -22,7 +22,7 @@ func TestEventBytesWithoutName(t *testing.T) {
 	e := Event{
 		Message: "{id: 1}",
 	}
-	result := e.Bytes()
+	result := e.bytes()
 	if !bytes.Equal(expecting, result) {
 		t.Errorf("expected:\n%s\ngot:\n%s\n", expecting, result)
 	}

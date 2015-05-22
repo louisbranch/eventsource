@@ -70,8 +70,9 @@ func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	chans := strings.Split(channels, ",")
 	client, err := s.add(conn, chans)
 	if err != nil {
-		log.Println(err)
+		conn.Write([]byte(err.Error()))
 		conn.Close()
+		log.Println(err)
 		return
 	}
 
@@ -85,25 +86,26 @@ func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 // Broadcast sends a message to all active clients connected that subscribed to
 // event's channel(s)
 func (s *Server) Broadcast(e Event) {
-	inactives := []*client{}
+	var subscribed []*client
+	var inactives []*client
 
 	for i := range s.clients {
 		c := s.clients[i]
 		if !c.active {
 			inactives = append(inactives, c)
-			close(c.in)
 			continue
 		}
 		if contains(e.Channels, c.channels) {
-			select {
-			case c.in <- e:
-			default: //discard value
-			}
+			subscribed = append(subscribed, c)
 		}
 	}
 
+	go e.loop(subscribed)
+
 	for j := range inactives {
-		s.remove(inactives[j])
+		c := inactives[j]
+		s.remove(c)
+		close(c.in)
 	}
 }
 
@@ -112,12 +114,11 @@ func (s *Server) Broadcast(e Event) {
 func (s *Server) add(conn net.Conn, channels []string) (*client, error) {
 	l := len(s.clients)
 	if l >= s.maxClients {
-		conn.Close()
 		return nil, errors.New("Max connections reached, closing connection.")
 	}
 	c := newClient(l, conn, channels)
 	s.clients = append(s.clients, c)
-	go c.listen()
+	go c.loop()
 	return c, nil
 }
 

@@ -8,9 +8,9 @@ import (
 type client struct {
 	active   bool
 	index    int
-	conn     net.Conn
-	in       chan Event
 	channels []string
+	conn     net.Conn
+	in       chan job
 }
 
 func newClient(index int, conn net.Conn, channels []string) *client {
@@ -19,7 +19,7 @@ func newClient(index int, conn net.Conn, channels []string) *client {
 	c.index = index
 	c.conn = conn
 	c.channels = channels
-	c.in = make(chan Event, 10)
+	c.in = make(chan job)
 	return &c
 }
 
@@ -34,15 +34,20 @@ func (c *client) deactivate() {
 	c.conn = nil
 }
 
-func (c *client) listen() {
-loop:
+func (c *client) loop() {
 	for {
-		e := <-c.in
-		c.conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
-		err := c.write(e.Bytes())
-		if err != nil {
-			c.deactivate()
-			break loop
+		p, ok := <-c.in
+		if ok {
+			c.conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+			err := c.write(p.data)
+			if err == nil {
+				p.done <- true
+			} else {
+				c.deactivate()
+				p.done <- false
+			}
+		} else {
+			return
 		}
 	}
 }
