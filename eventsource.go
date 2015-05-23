@@ -21,7 +21,7 @@ Connection: keep-alive`
 )
 
 type Eventsource struct {
-	server server
+	server
 }
 
 var padding string
@@ -40,14 +40,16 @@ func init() {
 }
 
 func NewServer(maxClients int) *Eventsource {
-	s := server{
-		limit:  maxClients,
-		send:   make(chan event),
-		add:    make(chan client),
-		remove: make(chan client),
+	e := &Eventsource{
+		server{
+			limit:  maxClients,
+			send:   make(chan event),
+			add:    make(chan client),
+			remove: make(chan client),
+		},
 	}
-	go s.listen()
-	return &Eventsource{server: s}
+	go e.listen()
+	return e
 }
 
 func (e *Eventsource) Broadcast(name string, message string, channels []string) {
@@ -57,7 +59,7 @@ func (e *Eventsource) Broadcast(name string, message string, channels []string) 
 		channels: channels,
 	}
 	go func() {
-		e.server.send <- event
+		e.send <- event
 	}()
 }
 
