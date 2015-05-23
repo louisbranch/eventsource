@@ -16,6 +16,8 @@ Connection: keep-alive`
 	BODY = "retry: 2000\n"
 
 	LIMIT_REACHED = "Max connections reached, closing connection."
+
+	PING = ": ping\n"
 )
 
 type Eventsource struct {

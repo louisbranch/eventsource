@@ -1,6 +1,9 @@
 package eventsource
 
-import "log"
+import (
+	"log"
+	"time"
+)
 
 type server struct {
 	limit  int
@@ -10,6 +13,7 @@ type server struct {
 }
 
 func (s *server) listen() {
+	hearbeat := time.NewTicker(30 * time.Second)
 	var clients []client
 	for {
 		select {
@@ -19,6 +23,8 @@ func (s *server) listen() {
 			clients = s.kill(clients, c)
 		case e := <-s.send:
 			s.broadcast(clients, e)
+		case <-hearbeat.C:
+			s.ping(clients)
 		}
 	}
 }
@@ -69,6 +75,19 @@ func (s *server) broadcast(clients []client, e event) {
 		}
 	}
 	go e.send(subscribed)
+}
+
+func (s *server) ping(clients []client) {
+	msg := []byte(PING)
+	for i := range clients {
+		c := clients[i]
+		go func() {
+			select {
+			case c.events <- msg:
+			case <-c.done:
+			}
+		}()
+	}
 }
 
 // contains returns whether a string in a is also present in b
