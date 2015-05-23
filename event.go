@@ -2,56 +2,63 @@ package eventsource
 
 import (
 	"bytes"
-	"log"
+	"time"
 )
 
-type Event struct {
-	Name     string
-	Message  string
-	Channels []string
+type event struct {
+	name     string
+	message  string
+	channels []string
+	started  time.Time
+	finished time.Time
 	sent     int
-	failed   int
 }
 
-type job struct {
-	data []byte
-	done chan bool
-}
+func (e *event) send(clients []client) {
+	e.started = time.Now()
+	defer func() {
+		e.finished = time.Now()
+	}()
 
-func (e *Event) loop(clients []*client) {
 	pending := len(clients)
+
 	if pending == 0 {
 		return
 	}
+
 	done := make(chan bool, pending)
-	p := job{data: e.bytes(), done: done}
+	payload := e.bytes()
+
 	for i := range clients {
 		c := clients[i]
 		go func() {
-			c.in <- p
+			select {
+			case c.events <- payload:
+				done <- true
+			case <-c.done:
+				done <- false
+			}
 		}()
 	}
+
 	for pending > 0 {
 		ok := <-done
 		if ok {
 			e.sent++
-		} else {
-			e.failed++
 		}
 		pending--
 	}
-	log.Printf("{send: %d, failed: %d}\n", e.sent, e.failed)
 }
 
-func (e *Event) bytes() []byte {
+func (e *event) bytes() []byte {
 	var buf bytes.Buffer
-	if e.Name != "" {
+	if e.name != "" {
 		buf.WriteString("event: ")
-		buf.WriteString(e.Name)
+		buf.WriteString(e.name)
 		buf.WriteString("\n")
 	}
 	buf.WriteString("data: ")
-	buf.WriteString(e.Message)
+	buf.WriteString(e.message)
 	buf.WriteString("\n")
 	return buf.Bytes()
 }
