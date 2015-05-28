@@ -1,8 +1,9 @@
 package eventsource
 
 import (
-	"log"
 	"time"
+
+	"log"
 )
 
 type server struct {
@@ -53,7 +54,8 @@ func (s *server) kill(clients []client, c client) []client {
 	}
 
 	if index == -1 {
-		log.Panic("Client not found")
+		log.Println("[ERROR] client not found to be removed")
+		return clients
 	}
 
 	if index < last {

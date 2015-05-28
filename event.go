@@ -3,6 +3,8 @@ package eventsource
 import (
 	"bytes"
 	"time"
+
+	"log"
 )
 
 type event struct {
@@ -18,6 +20,8 @@ func (e *event) send(clients []client) {
 	e.started = time.Now()
 	defer func() {
 		e.finished = time.Now()
+		duration := time.Since(e.started)
+		log.Printf("[INFO] event sent=%d duration=%d", e.sent, duration)
 	}()
 
 	pending := len(clients)
