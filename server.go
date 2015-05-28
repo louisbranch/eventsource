@@ -26,6 +26,7 @@ func (s *server) listen() {
 			s.broadcast(clients, e)
 		case <-hearbeat.C:
 			s.ping(clients)
+			log.Printf("[INFO] clients count=%d", len(clients))
 		}
 	}
 }
