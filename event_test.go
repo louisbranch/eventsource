@@ -5,11 +5,13 @@ import (
 	"testing"
 )
 
+var message []byte = []byte("{id: 1}")
+
 func TestEventBytesWithName(t *testing.T) {
-	expecting := []byte("event: test\ndata: {id: 1}\n")
+	expecting := []byte("event: test\ndata: {id: 1}\n\n")
 	e := event{
 		name:    "test",
-		message: "{id: 1}",
+		message: message,
 	}
 	result := e.bytes()
 	if !bytes.Equal(expecting, result) {
@@ -18,9 +20,9 @@ func TestEventBytesWithName(t *testing.T) {
 }
 
 func TestEventBytesWithoutName(t *testing.T) {
-	expecting := []byte("data: {id: 1}\n")
+	expecting := []byte("data: {id: 1}\n\n")
 	e := event{
-		message: "{id: 1}",
+		message: message,
 	}
 	result := e.bytes()
 	if !bytes.Equal(expecting, result) {
