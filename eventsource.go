@@ -52,7 +52,7 @@ func NewServer(maxClients int) *Eventsource {
 	return e
 }
 
-func (e *Eventsource) Broadcast(name string, message string, channels []string) {
+func (e *Eventsource) Broadcast(name string, message []byte, channels []string) {
 	event := event{
 		name:     name,
 		message:  message,
@@ -102,8 +102,8 @@ func handshake(req *http.Request) []byte {
 	var buf bytes.Buffer
 	buf.WriteString(HEADER)
 	if origin := req.Header.Get("origin"); origin != "" {
-		cors := fmt.Sprintf("Access-Control-Allow-Origin: %s", origin)
-		buf.WriteString("Access-Control-Allow-Credentials: true")
+		cors := fmt.Sprintf("Access-Control-Allow-Origin: %s\n", origin)
+		buf.WriteString("Access-Control-Allow-Credentials: true\n")
 		buf.WriteString(cors)
 	}
 	buf.WriteString("\n\n")

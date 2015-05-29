@@ -9,7 +9,7 @@ import (
 
 type event struct {
 	name     string
-	message  string
+	message  []byte
 	channels []string
 	started  time.Time
 	finished time.Time
@@ -62,7 +62,7 @@ func (e *event) bytes() []byte {
 		buf.WriteString("\n")
 	}
 	buf.WriteString("data: ")
-	buf.WriteString(e.message)
-	buf.WriteString("\n")
+	buf.Write(e.message)
+	buf.WriteString("\n\n")
 	return buf.Bytes()
 }
