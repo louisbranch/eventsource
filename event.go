@@ -2,6 +2,8 @@ package eventsource
 
 import (
 	"bytes"
+	"compress/zlib"
+	"encoding/base64"
 	"time"
 
 	"log"
@@ -11,9 +13,20 @@ type event struct {
 	name     string
 	message  []byte
 	channels []string
+	compress bool
 	started  time.Time
 	finished time.Time
 	sent     int
+}
+
+func newEvent(name string, message []byte, channels []string, compress bool) *event {
+	e := event{
+		name:     name,
+		message:  message,
+		channels: channels,
+		compress: compress,
+	}
+	return &e
 }
 
 func (e *event) send(clients []client) {
@@ -62,7 +75,20 @@ func (e *event) bytes() []byte {
 		buf.WriteString("\n")
 	}
 	buf.WriteString("data: ")
-	buf.Write(e.message)
+	if e.compress {
+		deflated := deflate(e.message)
+		buf.WriteString(deflated)
+	} else {
+		buf.Write(e.message)
+	}
 	buf.WriteString("\n\n")
 	return buf.Bytes()
+}
+
+func deflate(message []byte) string {
+	var buf bytes.Buffer
+	w, _ := zlib.NewWriterLevel(&buf, 6)
+	w.Write(message)
+	w.Close()
+	return base64.StdEncoding.EncodeToString(buf.Bytes())
 }

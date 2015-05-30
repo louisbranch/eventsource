@@ -21,6 +21,7 @@ Connection: keep-alive`
 )
 
 type Eventsource struct {
+	compress bool
 	server
 }
 
@@ -39,9 +40,10 @@ func init() {
 	padding = buf.String()
 }
 
-func NewServer(maxClients int) *Eventsource {
+func NewServer(maxClients int, compress bool) *Eventsource {
 	e := &Eventsource{
-		server{
+		compress: compress,
+		server: server{
 			limit:  maxClients,
 			send:   make(chan event),
 			add:    make(chan client),
@@ -53,13 +55,9 @@ func NewServer(maxClients int) *Eventsource {
 }
 
 func (e *Eventsource) Broadcast(name string, message []byte, channels []string) {
-	event := event{
-		name:     name,
-		message:  message,
-		channels: channels,
-	}
+	event := newEvent(name, message, channels, e.compress)
 	go func() {
-		e.send <- event
+		e.send <- *event
 	}()
 }
 

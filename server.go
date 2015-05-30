@@ -7,10 +7,11 @@ import (
 )
 
 type server struct {
-	limit  int
-	add    chan client
-	remove chan client
-	send   chan event
+	limit    int
+	compress bool
+	add      chan client
+	remove   chan client
+	send     chan event
 }
 
 func (s *server) listen() {
