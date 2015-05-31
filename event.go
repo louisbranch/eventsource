@@ -87,7 +87,7 @@ func (e *event) bytes() []byte {
 
 func deflate(message []byte) string {
 	var buf bytes.Buffer
-	w, _ := zlib.NewWriterLevel(&buf, 6)
+	w := zlib.NewWriter(&buf)
 	w.Write(message)
 	w.Close()
 	return base64.StdEncoding.EncodeToString(buf.Bytes())
