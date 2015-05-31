@@ -29,3 +29,15 @@ func TestEventBytesWithoutName(t *testing.T) {
 		t.Errorf("expected:\n%s\ngot:\n%s\n", expecting, result)
 	}
 }
+
+func TestEventBytesWithCompression(t *testing.T) {
+	expecting := []byte("data: eJyqzkyxUjCsBQQAAP//CfUCUQ==\n\n")
+	e := event{
+		message:  message,
+		compress: true,
+	}
+	result := e.bytes()
+	if !bytes.Equal(expecting, result) {
+		t.Errorf("expected:\n%s\ngot:\n%s\n", expecting, result)
+	}
+}
