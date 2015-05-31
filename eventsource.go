@@ -54,10 +54,17 @@ func NewServer(maxClients int, compress bool) *Eventsource {
 	return e
 }
 
+// Broadcast sends an event to all clients connected that are subscribed to one
+// of the channels passed. If no channels is passed, the event is sent to
+// clients with no channels
 func (e *Eventsource) Broadcast(name string, message []byte, channels []string) {
-	event := newEvent(name, message, channels, e.compress)
 	go func() {
-		e.send <- *event
+		e.send <- event{
+			name:     name,
+			message:  message,
+			channels: channels,
+			compress: e.compress,
+		}
 	}()
 }
 

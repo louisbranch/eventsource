@@ -19,16 +19,6 @@ type event struct {
 	sent     int
 }
 
-func newEvent(name string, message []byte, channels []string, compress bool) *event {
-	e := event{
-		name:     name,
-		message:  message,
-		channels: channels,
-		compress: compress,
-	}
-	return &e
-}
-
 func (e *event) send(clients []client) {
 	e.started = time.Now()
 	defer func() {
