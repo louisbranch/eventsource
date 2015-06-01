@@ -6,6 +6,8 @@ import (
 	"log"
 )
 
+// A server manages all clients, adding and removing them from the pool and
+// receiving incoming events to forward to clients
 type server struct {
 	limit    int
 	compress bool
@@ -74,7 +76,7 @@ func (s *server) broadcast(clients []client, e event) {
 	var subscribed []client
 	for i := range clients {
 		c := clients[i]
-		if contains(c.channels, e.channels) {
+		if isSubscribed(c.channels, e.channels) {
 			subscribed = append(subscribed, c)
 		}
 	}
@@ -94,8 +96,8 @@ func (s *server) ping(clients []client) {
 	}
 }
 
-// contains returns whether a string in a is also present in b
-func contains(a []string, b []string) bool {
+// The isSubscribed function returns whether a channel in a is also present in b
+func isSubscribed(a []string, b []string) bool {
 	for i := range a {
 		for j := range b {
 			if a[i] == b[j] {
