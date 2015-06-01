@@ -6,6 +6,7 @@ import (
 )
 
 var message []byte = []byte("{id: 1}")
+var deflated = "eJyqzkyxUjCsBQQAAP//CfUCUQ=="
 
 func TestEventBytesWithName(t *testing.T) {
 	expecting := []byte("event: test\ndata: {id: 1}\n\n")
@@ -31,13 +32,21 @@ func TestEventBytesWithoutName(t *testing.T) {
 }
 
 func TestEventBytesWithCompression(t *testing.T) {
-	expecting := []byte("data: eJyqzkyxUjCsBQQAAP//CfUCUQ==\n\n")
+	expecting := []byte("data: " + deflated + "\n\n")
 	e := event{
 		message:  message,
 		compress: true,
 	}
 	result := e.bytes()
 	if !bytes.Equal(expecting, result) {
+		t.Errorf("expected:\n%s\ngot:\n%s\n", expecting, result)
+	}
+}
+
+func TestDeflate(t *testing.T) {
+	expecting := deflated
+	result := deflate(message)
+	if expecting != result {
 		t.Errorf("expected:\n%s\ngot:\n%s\n", expecting, result)
 	}
 }
