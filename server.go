@@ -9,11 +9,9 @@ import (
 // A server manages all clients, adding and removing them from the pool and
 // receiving incoming events to forward to clients
 type server struct {
-	limit    int
-	compress bool
-	add      chan client
-	remove   chan client
-	send     chan event
+	add    chan client
+	remove chan client
+	send   chan Event
 }
 
 func (s *server) listen() {
@@ -35,14 +33,8 @@ func (s *server) listen() {
 }
 
 func (s *server) spawn(clients []client, c client) []client {
-	l := len(clients)
 	go c.listen(s.remove)
-	if l >= s.limit {
-		c.events <- []byte(LIMIT_REACHED)
-		close(c.events)
-	} else {
-		clients = append(clients, c)
-	}
+	clients = append(clients, c)
 	return clients
 }
 
@@ -72,11 +64,11 @@ func (s *server) kill(clients []client, c client) []client {
 	return clients
 }
 
-func (s *server) broadcast(clients []client, e event) {
+func (s *server) broadcast(clients []client, e Event) {
 	var subscribed []client
 	for i := range clients {
 		c := clients[i]
-		if isSubscribed(c.channels, e.channels) {
+		if isSubscribed(c.channels, e.Channels) {
 			subscribed = append(subscribed, c)
 		}
 	}

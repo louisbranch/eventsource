@@ -11,11 +11,11 @@ import (
 
 // An event is the high-level construct to send messages to clients
 // It holds all the information necessary to build the actual text/stream event
-type event struct {
-	name     string
-	message  []byte
-	channels []string
-	compress bool
+type Event struct {
+	Name     string
+	Message  []byte
+	Channels []string
+	Compress bool
 }
 
 // The send function receives a list of clients and send to each client channel
@@ -23,7 +23,7 @@ type event struct {
 // After all clients have received the message or disconnected, the event logs
 // how many clients received the message and the duration the event took to
 // finish
-func (e *event) send(clients []client) {
+func (e *Event) send(clients []client) {
 	pending := len(clients)
 	if pending == 0 {
 		return
@@ -62,19 +62,19 @@ func (e *event) send(clients []client) {
 // The bytes function returns the text/stream message to be sent to the client
 // If the event has name, it is added first, then the data. Optionally, the data
 // can be compressed using zlib
-func (e *event) bytes() []byte {
+func (e *Event) bytes() []byte {
 	var buf bytes.Buffer
-	if e.name != "" {
+	if e.Name != "" {
 		buf.WriteString("event: ")
-		buf.WriteString(e.name)
+		buf.WriteString(e.Name)
 		buf.WriteString("\n")
 	}
 	buf.WriteString("data: ")
-	if e.compress {
-		deflated := deflate(e.message)
+	if e.Compress {
+		deflated := deflate(e.Message)
 		buf.WriteString(deflated)
 	} else {
-		buf.Write(e.message)
+		buf.Write(e.Message)
 	}
 	buf.WriteString("\n\n")
 	return buf.Bytes()

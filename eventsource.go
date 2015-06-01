@@ -15,13 +15,10 @@ Connection: keep-alive`
 
 	BODY = "retry: 2000\n"
 
-	LIMIT_REACHED = "Max connections reached, closing connection."
-
 	PING = ": ping\n"
 )
 
 type Eventsource struct {
-	compress bool
 	server
 }
 
@@ -40,12 +37,10 @@ func init() {
 	padding = buf.String()
 }
 
-func NewServer(maxClients int, compress bool) *Eventsource {
+func NewServer() *Eventsource {
 	e := &Eventsource{
-		compress: compress,
 		server: server{
-			limit:  maxClients,
-			send:   make(chan event),
+			send:   make(chan Event),
 			add:    make(chan client),
 			remove: make(chan client),
 		},
@@ -54,17 +49,12 @@ func NewServer(maxClients int, compress bool) *Eventsource {
 	return e
 }
 
-// Broadcast sends an event to all clients connected that are subscribed to one
-// of the channels passed. If no channels is passed, the event is sent to
-// clients with no channels
-func (e *Eventsource) Broadcast(name string, message []byte, channels []string) {
+// The send function forward an event to all clients connected that are
+// subscribed to one of the channels passed. If no channels is passed, the event
+// is sent to clients with no channels
+func (e *Eventsource) Send(event Event) {
 	go func() {
-		e.send <- event{
-			name:     name,
-			message:  message,
-			channels: channels,
-			compress: e.compress,
-		}
+		e.send <- event
 	}()
 }
 
