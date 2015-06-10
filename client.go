@@ -32,6 +32,7 @@ func (c *client) listen(remove chan<- client) {
 			remove <- *c
 			c.conn.Close()
 			close(c.done)
+			break
 		}
 	}
 }

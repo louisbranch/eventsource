@@ -60,7 +60,6 @@ func (s *server) kill(clients []client, c client) []client {
 	}
 	clients = clients[:last]
 
-	close(c.events)
 	return clients
 }
 
