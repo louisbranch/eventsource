@@ -1,3 +1,9 @@
+/*
+Package eventsource provides an implementation to Server-sent events using
+goroutines to handle client (un)subscription and forwarding events to clients.
+For more information about Eventsource / SSE check the MDN documentation:
+https://developer.mozilla.org/en-US/docs/Server-sent_events/Using_server-sent_events
+*/
 package eventsource
 
 import (
@@ -8,25 +14,34 @@ import (
 )
 
 const (
+	// HTTP HEADER sent to browser to upgrade the protocol to event-stream
 	HEADER = `HTTP/1.1 200 OK
 Content-Type: text/event-stream
 Cache-Control: no-cache
 Connection: keep-alive`
 
+	// BODY is the initial payload sent by the server and informs the client to
+	// retry a new connection after 2 seconds if it drops.
 	BODY = "retry: 2000\n"
 
+	// PING is a message sent every 30s to detect stale clients and remove them
+	// from the list.
 	PING = ": ping\n"
 )
 
+// An Eventsource is a high-level abstraction of the server. It can be used as a
+// Handler for a http route and to send events to all clients connected.
+// An Eventsource instance MUST be created using the NewServer function.
+// Multiple servers can coexist and be used on more than one end-point.
 type Eventsource struct {
 	server
 }
 
+// Internet Explorer < 10 needs a message padding to successfully establish a
+// text stream connection See
+//http://blogs.msdn.com/b/ieinternals/archive/2010/04/06/comet-streaming-in-internet-explorer-with-xmlhttprequest-and-xdomainrequest.aspx
 var padding string
 
-//init generates a padding payload to establish a text/stream connection on
-//Internet Explorer < 10. See
-//http://blogs.msdn.com/b/ieinternals/archive/2010/04/06/comet-streaming-in-internet-explorer-with-xmlhttprequest-and-xdomainrequest.aspx
 func init() {
 	var buf bytes.Buffer
 	buf.WriteByte(':')
@@ -37,6 +52,8 @@ func init() {
 	padding = buf.String()
 }
 
+// The NewServer function configures a new instace of the Eventsource, creating
+// all necessary channels and spawning a new goroutine to listen to events.
 func NewServer() *Eventsource {
 	e := &Eventsource{
 		server: server{
@@ -91,7 +108,7 @@ func (e *Eventsource) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	e.server.add <- c
 }
 
-// handshake sends a header and body sent to client to establish a
+// The handshake function sends a header and body to the browser to establish a
 // text/stream connection with retry option and CORS enabled.
 func handshake(req *http.Request) []byte {
 	var buf bytes.Buffer

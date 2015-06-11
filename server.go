@@ -14,6 +14,9 @@ type server struct {
 	send   chan Event
 }
 
+// The listen function is used to receive messages to add, remove and broadcast
+// events to client connected. Every 30 seconds it sends a ping message to all
+// clients and log how many clients are connected.
 func (s *server) listen() {
 	hearbeat := time.NewTicker(30 * time.Second)
 	var clients []client
@@ -32,12 +35,18 @@ func (s *server) listen() {
 	}
 }
 
+// The spawn function adds a new client to the clients list and launches a
+// goroutine for the client to listen to incoming messages. The client receives
+// the remove channel necessary to unsubscribe itself from the server.
 func (s *server) spawn(clients []client, c client) []client {
 	go c.listen(s.remove)
 	clients = append(clients, c)
 	return clients
 }
 
+// The kill function removes a client from the client list by comparing their
+// events channel. The client is removed by being moved to the end of the list
+// and reducing the slice length.
 func (s *server) kill(clients []client, c client) []client {
 	last := len(clients) - 1
 	index := -1
@@ -63,6 +72,8 @@ func (s *server) kill(clients []client, c client) []client {
 	return clients
 }
 
+// The broadcast function sends an event to all clients connected that have
+// subscribed to the same channels and the event being sent.
 func (s *server) broadcast(clients []client, e Event) {
 	var subscribed []client
 	for i := range clients {
@@ -74,6 +85,8 @@ func (s *server) broadcast(clients []client, e Event) {
 	go e.send(subscribed)
 }
 
+// The ping functions sends a ping message to the client to detect stale
+// connections
 func (s *server) ping(clients []client) {
 	msg := []byte(PING)
 	for i := range clients {
