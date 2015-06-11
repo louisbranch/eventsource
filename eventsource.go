@@ -1,6 +1,6 @@
 /*
 Package eventsource provides an implementation to Server-sent events using
-goroutines to handle client (un)subscription and forwarding events to clients.
+goroutines to handle client (un)subscription and forward events to clients.
 For more information about Eventsource / SSE check the MDN documentation:
 https://developer.mozilla.org/en-US/docs/Server-sent_events/Using_server-sent_events
 */
@@ -67,8 +67,8 @@ func NewServer() *Eventsource {
 }
 
 // The send function forward an event to all clients connected that are
-// subscribed to one of the channels passed. If no channels is passed, the event
-// is sent to clients with no channels
+// subscribed to one of the channels passed. If no channels are passed, the
+// event is sent to clients with no channels
 func (e *Eventsource) Send(event Event) {
 	go func() {
 		e.send <- event
