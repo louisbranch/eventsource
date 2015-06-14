@@ -34,6 +34,9 @@ Connection: keep-alive`
 // coexist and be used on more than one end-point.
 type Eventsource struct {
 	server
+
+	// Interface that implements how channels are assigned to clients. It
+	// defaults to NoChannels, meaning all events must be global.
 	ChanSub ChannelSubscriber
 }
 
