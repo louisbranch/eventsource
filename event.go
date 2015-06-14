@@ -17,10 +17,7 @@ type Event struct {
 
 // The send function receives a list of clients and send to each client channel
 // the text/stream event to be written on the client's connection
-// After all clients have received the message or disconnected, the event logs
-// how many clients received the message and the duration the event took to
-// finish
-func (e *Event) send(clients []client) {
+func (e Event) send(clients []client) {
 	pending := len(clients)
 	if pending == 0 {
 		return
@@ -42,7 +39,7 @@ func (e *Event) send(clients []client) {
 // The bytes function returns the text/stream message to be sent to the client
 // If the event has name, it is added first, then the data. Optionally, the data
 // can be compressed using zlib
-func (e *Event) bytes() []byte {
+func (e Event) bytes() []byte {
 	var buf bytes.Buffer
 	if e.Name != "" {
 		buf.WriteString("event: ")
