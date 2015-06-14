@@ -7,25 +7,30 @@ import "time"
 type server struct {
 	add    chan client
 	remove chan client
-	send   chan Event
+	local  chan Event
+	global chan Event
 }
 
-// The listen function is used to receive messages to add, remove and broadcast
+// The listen function is used to receive messages to add, remove and send
 // events to client connected. Every 30 seconds it sends a ping message to all
 // clients to detect stale connections
 func (s *server) listen() {
-	hearbeat := time.NewTicker(30 * time.Second)
 	var clients []client
+	hearbeat := time.NewTicker(30 * time.Second)
+	ping := Event{Message: []byte(PING)}
+
 	for {
 		select {
 		case c := <-s.add:
 			clients = s.spawn(clients, c)
 		case c := <-s.remove:
 			clients = s.kill(clients, c)
-		case e := <-s.send:
+		case e := <-s.local:
+			s.send(clients, e)
+		case e := <-s.global:
 			s.broadcast(clients, e)
 		case <-hearbeat.C:
-			s.ping(clients)
+			s.broadcast(clients, ping)
 		}
 	}
 }
@@ -65,12 +70,12 @@ func (s *server) kill(clients []client, client client) []client {
 	return clients
 }
 
-// The broadcast function sends an event to all clients connected that have
-// subscribed to the same channels and the event being sent.
-func (s *server) broadcast(clients []client, e Event) {
+// The send function sends an event to all clients connected that have
+// subscribed to one of the event's channels.
+func (s *server) send(clients []client, e Event) {
 	var subscribed []client
 	for _, c := range clients {
-		if isSubscribed(c.channels, e.Channels) {
+		if hasChannel(c.channels, e.Channels) {
 			subscribed = append(subscribed, c)
 		}
 	}
@@ -79,21 +84,16 @@ func (s *server) broadcast(clients []client, e Event) {
 	}
 }
 
-// The ping function sends a ping message to clients to detect stale connections
-func (s *server) ping(clients []client) {
+// The broadcast function sends an event to all clients connected.
+func (s *server) broadcast(clients []client, e Event) {
 	if len(clients) > 0 {
-		e := Event{}
-		e.Message = []byte(PING)
 		go e.send(clients)
 	}
 }
 
-// The isSubscribed function returns whether a channel in a is also present in b
-// or if both are empty
-func isSubscribed(client []string, server []string) bool {
-	if len(client) == 0 && len(server) == 0 {
-		return true
-	}
+// The hasChannel function returns whether client and server have a channel in
+// common.
+func hasChannel(client []string, server []string) bool {
 	for _, c := range client {
 		for _, s := range server {
 			if c == s {

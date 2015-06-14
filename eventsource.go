@@ -29,8 +29,8 @@ Connection: keep-alive`
 	PING = ": ping\n"
 )
 
-// An Eventsource is a high-level abstraction of the server. It can be used as a
-// Handler for a http route and to send events to all clients connected.
+// An Eventsource is a high-level server abstraction. It can be used as a
+// Handler for a http route and to send events to clients connected.
 // An Eventsource instance MUST be created using the NewServer function.
 // Multiple servers can coexist and be used on more than one end-point.
 type Eventsource struct {
@@ -53,25 +53,32 @@ func init() {
 }
 
 // The NewServer function configures a new instace of the Eventsource, creating
-// all necessary channels and spawning a new goroutine to listen to events.
+// all necessary channels and spawning a new goroutine to listen to commands.
 func NewServer() *Eventsource {
 	e := &Eventsource{
 		server: server{
-			send:   make(chan Event),
 			add:    make(chan client),
 			remove: make(chan client),
+			local:  make(chan Event),
+			global: make(chan Event),
 		},
 	}
 	go e.listen()
 	return e
 }
 
-// The send function forward an event to all clients connected that are
-// subscribed to one of the channels passed. If no channels are passed, the
-// event is sent to clients with no channels
+// The send function sends an event to all clients connected that have
+// subscribed to one of the channels passed.
 func (e *Eventsource) Send(event Event) {
 	go func() {
-		e.send <- event
+		e.local <- event
+	}()
+}
+
+// The broadcast function sends an event to all clients connected.
+func (e *Eventsource) Broadcast(event Event) {
+	go func() {
+		e.global <- event
 	}()
 }
 
