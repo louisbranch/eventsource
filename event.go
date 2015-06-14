@@ -19,8 +19,7 @@ type Event struct {
 // the text/stream event to be written on the client's connection
 func (e Event) send(clients []client) {
 	data := e.bytes()
-	for i := range clients {
-		c := clients[i]
+	for _, c := range clients {
 		go func() {
 			select {
 			case c.events <- data:

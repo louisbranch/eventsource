@@ -70,8 +70,7 @@ func (s *server) kill(clients []client, c client) []client {
 // subscribed to the same channels and the event being sent.
 func (s *server) broadcast(clients []client, e Event) {
 	var subscribed []client
-	for i := range clients {
-		c := clients[i]
+	for _, c := range clients {
 		if isSubscribed(c.channels, e.Channels) {
 			subscribed = append(subscribed, c)
 		}
@@ -85,8 +84,7 @@ func (s *server) broadcast(clients []client, e Event) {
 // connections
 func (s *server) ping(clients []client) {
 	msg := []byte(PING)
-	for i := range clients {
-		c := clients[i]
+	for _, c := range clients {
 		go func() {
 			select {
 			case c.events <- msg:
@@ -98,9 +96,9 @@ func (s *server) ping(clients []client) {
 
 // The isSubscribed function returns whether a channel in a is also present in b
 func isSubscribed(a []string, b []string) bool {
-	for i := range a {
-		for j := range b {
-			if a[i] == b[j] {
+	for _, ca := range a {
+		for _, cb := range b {
+			if ca == cb {
 				return true
 			}
 		}
