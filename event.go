@@ -18,13 +18,7 @@ type Event struct {
 // The send function receives a list of clients and send to each client channel
 // the text/stream event to be written on the client's connection
 func (e Event) send(clients []client) {
-	pending := len(clients)
-	if pending == 0 {
-		return
-	}
-
 	data := e.bytes()
-
 	for i := range clients {
 		c := clients[i]
 		go func() {

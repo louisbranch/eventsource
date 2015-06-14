@@ -76,7 +76,9 @@ func (s *server) broadcast(clients []client, e Event) {
 			subscribed = append(subscribed, c)
 		}
 	}
-	go e.send(subscribed)
+	if len(subscribed) > 0 {
+		go e.send(subscribed)
+	}
 }
 
 // The ping functions sends a ping message to the client to detect stale
