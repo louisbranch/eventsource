@@ -29,9 +29,12 @@ type QueryStringChannels struct {
 	Name string
 }
 
-// The ParseRequest function parses they querystring and extracts the channels
+// The ParseRequest function parses the querystring and extracts the Name
 // params, spliting it by commas.
 func (n QueryStringChannels) ParseRequest(req *http.Request) []string {
 	channels := req.URL.Query().Get(n.Name)
+	if channels == "" {
+		return []string{}
+	}
 	return strings.Split(channels, ",")
 }

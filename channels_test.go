@@ -17,6 +17,15 @@ func TestNoChannelsParseRequest(t *testing.T) {
 	}
 }
 
+func TestQueryStringChannelsParseRequestEmpty(t *testing.T) {
+	sub := QueryStringChannels{}
+	results := sub.ParseRequest(req)
+
+	if len(results) > 0 {
+		t.Errorf("expected:\n%q\nto be empty\n", results)
+	}
+}
+
 func TestQueryStringChannelsParseRequest(t *testing.T) {
 	sub := QueryStringChannels{Name: "channels"}
 	results := sub.ParseRequest(req)
