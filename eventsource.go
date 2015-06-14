@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 const (
@@ -35,6 +34,7 @@ Connection: keep-alive`
 // coexist and be used on more than one end-point.
 type Eventsource struct {
 	server
+	ChanSub ChannelSubscriber
 }
 
 // Internet Explorer < 10 needs a message padding to successfully establish a
@@ -62,6 +62,7 @@ func NewServer() *Eventsource {
 			local:  make(chan Event),
 			global: make(chan Event),
 		},
+		ChanSub: NoChannels{},
 	}
 	go e.listen()
 	return e
@@ -104,10 +105,11 @@ func (e *Eventsource) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		conn.Close()
 	}
 
-	channels := req.URL.Query().Get("channels")
+	channels := e.ChanSub.ParseRequest(req)
+
 	c := client{
 		conn:     conn,
-		channels: strings.Split(channels, ","),
+		channels: channels,
 		events:   make(chan []byte),
 		done:     make(chan bool),
 	}
