@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/base64"
-	"time"
-
-	"log"
 )
 
 // An event is the high-level construct to send messages to clients
@@ -29,9 +26,6 @@ func (e *Event) send(clients []client) {
 		return
 	}
 
-	started := time.Now()
-
-	done := make(chan bool, pending)
 	data := e.bytes()
 
 	for i := range clients {
@@ -39,24 +33,10 @@ func (e *Event) send(clients []client) {
 		go func() {
 			select {
 			case c.events <- data:
-				done <- true
 			case <-c.done:
-				done <- false
 			}
 		}()
 	}
-
-	sent := 0
-	for pending > 0 {
-		ok := <-done
-		if ok {
-			sent++
-		}
-		pending--
-	}
-
-	duration := time.Since(started)
-	log.Printf("[INFO] event sent=%d duration=%d", sent, duration)
 }
 
 // The bytes function returns the text/stream message to be sent to the client

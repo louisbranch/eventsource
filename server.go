@@ -1,10 +1,6 @@
 package eventsource
 
-import (
-	"time"
-
-	"log"
-)
+import "time"
 
 // A server manages all clients, adding and removing them from the pool and
 // receiving incoming events to forward to clients
@@ -16,7 +12,7 @@ type server struct {
 
 // The listen function is used to receive messages to add, remove and broadcast
 // events to client connected. Every 30 seconds it sends a ping message to all
-// clients and log how many clients are connected.
+// clients to detect stale connections
 func (s *server) listen() {
 	hearbeat := time.NewTicker(30 * time.Second)
 	var clients []client
@@ -30,7 +26,6 @@ func (s *server) listen() {
 			s.broadcast(clients, e)
 		case <-hearbeat.C:
 			s.ping(clients)
-			log.Printf("[INFO] clients count=%d", len(clients))
 		}
 	}
 }
@@ -59,8 +54,7 @@ func (s *server) kill(clients []client, c client) []client {
 	}
 
 	if index == -1 {
-		log.Println("[ERROR] client not found to be removed")
-		return clients
+		panic("client not found to be removed")
 	}
 
 	if index < last {
