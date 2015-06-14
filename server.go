@@ -94,10 +94,14 @@ func (s *server) ping(clients []client) {
 }
 
 // The isSubscribed function returns whether a channel in a is also present in b
-func isSubscribed(a []string, b []string) bool {
-	for _, ca := range a {
-		for _, cb := range b {
-			if ca == cb {
+// or if both are empty
+func isSubscribed(client []string, server []string) bool {
+	if len(client) == 0 && len(server) == 0 {
+		return true
+	}
+	for _, c := range client {
+		for _, s := range server {
+			if c == s {
 				return true
 			}
 		}
