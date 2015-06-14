@@ -1,6 +1,4 @@
-# Eventsource
-
-[![Build Status](https://drone.io/github.com/luizbranco/eventsource/status.png)](https://drone.io/github.com/luizbranco/eventsource/latest)
+# Eventsource [![Build Status](https://drone.io/github.com/luizbranco/eventsource/status.png)](https://drone.io/github.com/luizbranco/eventsource/latest) [![GoDoc](https://godoc.org/github.com/luizbranco/eventsource?status.svg)](https://godoc.org/github.com/luizbranco/eventsource)
 
 Package eventsource provides an implementation to Server-sent events using goroutines to handle client (un)subscription and forwarding events to clients.
 

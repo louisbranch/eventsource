@@ -12,7 +12,7 @@ type server struct {
 }
 
 // The listen function is used to receive messages to add, remove and send
-// events to client connected. Every 30 seconds it sends a ping message to all
+// events to clients. Every 30 seconds it sends a ping message to all
 // clients to detect stale connections
 func (s *server) listen() {
 	var clients []client
@@ -70,8 +70,8 @@ func (s *server) kill(clients []client, client client) []client {
 	return clients
 }
 
-// The send function sends an event to all clients connected that have
-// subscribed to one of the event's channels.
+// The send function sends an event to all clients that have subscribed to one
+// of the event's channels.
 func (s *server) send(clients []client, e Event) {
 	var subscribed []client
 	for _, c := range clients {
@@ -84,7 +84,7 @@ func (s *server) send(clients []client, e Event) {
 	}
 }
 
-// The broadcast function sends an event to all clients connected.
+// The broadcast function sends an event to all clients.
 func (s *server) broadcast(clients []client, e Event) {
 	if len(clients) > 0 {
 		go e.send(clients)

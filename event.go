@@ -6,8 +6,7 @@ import (
 	"encoding/base64"
 )
 
-// An event is the high-level construct to send messages to clients
-// It holds all the information necessary to build the actual text/stream event
+// An event holds the data necessary to build the actual text/stream event
 type Event struct {
 	Name     string
 	Message  []byte
@@ -15,8 +14,8 @@ type Event struct {
 	Compress bool
 }
 
-// The send function receives a list of clients and send to each client channel
-// the text/stream event to be written on the client's connection
+// The send function receives a list of clients and send to them the text/stream
+// event to be written on the client's connection
 func (e Event) send(clients []client) {
 	data := e.bytes()
 	for _, c := range clients {

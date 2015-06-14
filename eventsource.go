@@ -30,9 +30,9 @@ Connection: keep-alive`
 )
 
 // An Eventsource is a high-level server abstraction. It can be used as a
-// Handler for a http route and to send events to clients connected.
-// An Eventsource instance MUST be created using the NewServer function.
-// Multiple servers can coexist and be used on more than one end-point.
+// Handler for a http route and to send events to clients. An Eventsource
+// instance MUST be created using the NewServer function. Multiple servers can
+// coexist and be used on more than one end-point.
 type Eventsource struct {
 	server
 }
@@ -67,7 +67,7 @@ func NewServer() *Eventsource {
 	return e
 }
 
-// The send function sends an event to all clients connected that have
+// The send function sends an event to all clients that have
 // subscribed to one of the channels passed.
 func (e *Eventsource) Send(event Event) {
 	go func() {
@@ -75,7 +75,7 @@ func (e *Eventsource) Send(event Event) {
 	}()
 }
 
-// The broadcast function sends an event to all clients connected.
+// The broadcast function sends an event to all clients.
 func (e *Eventsource) Broadcast(event Event) {
 	go func() {
 		e.global <- event
