@@ -79,17 +79,12 @@ func (s *server) broadcast(clients []client, e Event) {
 	}
 }
 
-// The ping functions sends a ping message to the client to detect stale
-// connections
+// The ping function sends a ping message to clients to detect stale connections
 func (s *server) ping(clients []client) {
-	msg := []byte(PING)
-	for _, c := range clients {
-		go func() {
-			select {
-			case c.events <- msg:
-			case <-c.done:
-			}
-		}()
+	if len(clients) > 0 {
+		e := Event{}
+		e.Message = []byte(PING)
+		go e.send(clients)
 	}
 }
 
