@@ -18,7 +18,7 @@ func TestNoChannelsParseRequest(t *testing.T) {
 }
 
 func TestQueryStringChannelsParseRequest(t *testing.T) {
-	sub := QueryStringChannels{}
+	sub := QueryStringChannels{Name: "channels"}
 	results := sub.ParseRequest(req)
 	expected := []string{"a", "b", "c"}
 
