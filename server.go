@@ -42,21 +42,20 @@ func (s *server) spawn(clients []client, c client) []client {
 // The kill function removes a client from the client list by comparing their
 // events channel. The client is removed by being moved to the end of the list
 // and reducing the slice length.
-func (s *server) kill(clients []client, c client) []client {
-	last := len(clients) - 1
+func (s *server) kill(clients []client, client client) []client {
 	index := -1
-
-	for i := range clients {
-		if c.events == clients[i].events {
+	for i, c := range clients {
+		if client.events == c.events {
 			index = i
 			break
 		}
 	}
 
 	if index == -1 {
-		panic("client not found to be removed")
+		panic("client not found")
 	}
 
+	last := len(clients) - 1
 	if index < last {
 		swap := clients[last]
 		clients[index] = swap
