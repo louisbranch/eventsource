@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// A client hold the actual connection to the browser, the channels names the
+// A client holds the actual connection to the browser, the channels names the
 // client has subscribed to, a queue to receive events and a done channel for
 // syncronization with pending events.
 type client struct {
@@ -18,7 +18,7 @@ type client struct {
 // The listen function receives incoming events on the events channel, writing
 // them to its underlining connection. If there is an error, the client send a
 // message to remove itself from the pool through the remove channel passed in
-// and notifies pending events through closing the done channel.
+// and notifies pending events by closing the done channel.
 func (c *client) listen(remove chan<- client) {
 	for {
 		e, ok := <-c.events

@@ -17,7 +17,10 @@ type Eventsource struct {
 
 	// Interface that implements how channels are assigned to clients. It
 	// defaults to NoChannels, meaning all events must be global.
-	ChanSub     ChannelSubscriber
+	ChanSub ChannelSubscriber
+
+	// Interface that implements what options are sent during the initial http
+	// handshaking. See DefaultHttpOptions for details.
 	HttpOptions HttpOptions
 }
 
@@ -46,8 +49,8 @@ func NewServer() *Eventsource {
 	return e
 }
 
-// The send function sends an event to all clients that have
-// subscribed to one of the channels passed.
+// The send function sends an event to all clients that have  subscribed to one
+// of the channels passed.
 func (e *Eventsource) Send(event Event) {
 	go func() {
 		e.local <- event
@@ -62,9 +65,8 @@ func (e *Eventsource) Broadcast(event Event) {
 }
 
 // ServeHTTP implements the http handle interface.
-// If the connection supports hijacking, it sends an initial header to switch
-// to text/stream protocol and an initial body to retry after 2 seconds if the
-// connection drops.
+// If the connection supports hijacking, it sends an initial header and body to
+// switch to the text/stream protocol and start streaming.
 func (e *Eventsource) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	hj, ok := res.(http.Hijacker)
 	if !ok {
