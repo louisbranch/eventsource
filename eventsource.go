@@ -21,6 +21,10 @@ type Eventsource struct {
 	HttpOptions HttpOptions
 }
 
+// A HijackingError is displayed when the browser doesn't support connection
+// hijacking. See http://golang.org/pkg/net/http/#Hijacker
+var HijackingError = "webserver doesn't support hijacking"
+
 // The NewServer function configures a new instace of the Eventsource, creating
 // all necessary channels and spawning a new goroutine to listen to commands.
 func NewServer() *Eventsource {
@@ -64,7 +68,7 @@ func (e *Eventsource) Broadcast(event Event) {
 func (e *Eventsource) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	hj, ok := res.(http.Hijacker)
 	if !ok {
-		http.Error(res, "webserver doesn't support hijacking", http.StatusInternalServerError)
+		http.Error(res, HijackingError, http.StatusInternalServerError)
 		return
 	}
 
