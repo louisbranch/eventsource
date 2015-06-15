@@ -17,7 +17,7 @@ type server struct {
 func (s *server) listen() {
 	var clients []client
 	hearbeat := time.NewTicker(30 * time.Second)
-	ping := Event{Message: []byte(PING)}
+	ping := Event{Message: []byte(": ping\n")}
 
 	for {
 		select {
