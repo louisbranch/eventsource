@@ -9,10 +9,24 @@ import (
 // client has subscribed to, a queue to receive events and a done channel for
 // syncronization with pending events.
 type client struct {
-	events   chan []byte
+	events   chan payload
 	done     chan bool
 	channels []string
 	conn     net.Conn
+}
+
+// A payload contains the event data that must be written to the client
+// connection and a done channel to signalize the end of the write process
+type payload struct {
+	data []byte
+	done chan status
+}
+
+// A status tracks the client connection write state
+type status struct {
+	start time.Time
+	end   time.Time
+	sent  bool
 }
 
 // The listen function receives incoming events on the events channel, writing
@@ -27,8 +41,11 @@ func (c *client) listen(remove chan<- client) {
 			return
 		}
 		c.conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
-		_, err := c.conn.Write(e)
-		if err != nil {
+		start := time.Now()
+		_, err := c.conn.Write(e.data)
+		if err == nil && e.done != nil {
+			e.done <- status{start: start, end: time.Now(), sent: true}
+		} else {
 			remove <- *c
 			c.conn.Close()
 			close(c.done)

@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestDefaultHttpOptionsNoRetryBytes(t *testing.T) {
+func TestDefaultHttpOptionsBytesWithoutRetry(t *testing.T) {
 	expecting := []byte(
 		`HTTP/1.1 200 OK
 Content-Type: text/event-stream
@@ -24,7 +24,7 @@ Connection: keep-alive
 	}
 }
 
-func TestDefaultHttpOptionsRetryBytes(t *testing.T) {
+func TestDefaultHttpOptionsBytesWithRetry(t *testing.T) {
 	expecting := []byte(
 		`HTTP/1.1 200 OK
 Content-Type: text/event-stream
@@ -43,7 +43,7 @@ retry: 2000
 	}
 }
 
-func TestDefaultHttpOptionsCorsBytes(t *testing.T) {
+func TestDefaultHttpOptionsBytesWithCorsEnabled(t *testing.T) {
 	expecting := []byte(
 		`HTTP/1.1 200 OK
 Content-Type: text/event-stream
@@ -64,7 +64,7 @@ Access-Control-Allow-Origin: http://localhost/
 	}
 }
 
-func TestDefaultHttpOptionsOldBrowserSupportBytes(t *testing.T) {
+func TestDefaultHttpOptionsBytesWithOldBrowserSupportEnabled(t *testing.T) {
 	expecting := []byte("HTTP/1.1 200 OK\nContent-Type: text/event-stream\nCache-Control: no-cache\nConnection: keep-alive\n\n:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \n")
 
 	var req, _ = http.NewRequest("GET", "/", nil)

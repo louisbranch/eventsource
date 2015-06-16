@@ -2,6 +2,8 @@ package eventsource
 
 import "time"
 
+var ping = payload{data: []byte(":ping\n\n")}
+
 // A server manages all clients, adding and removing them from the pool and
 // receiving incoming events to forward to clients
 type server struct {
@@ -17,7 +19,6 @@ type server struct {
 func (s *server) listen() {
 	var clients []client
 	hearbeat := time.NewTicker(30 * time.Second)
-	ping := Event{Message: []byte(": ping\n")}
 
 	for {
 		select {
@@ -30,7 +31,8 @@ func (s *server) listen() {
 		case e := <-s.global:
 			s.broadcast(clients, e)
 		case <-hearbeat.C:
-			s.broadcast(clients, ping)
+			stats.ClientsCount(len(clients))
+			s.ping(clients)
 		}
 	}
 }
@@ -88,6 +90,19 @@ func (s *server) send(clients []client, e Event) {
 func (s *server) broadcast(clients []client, e Event) {
 	if len(clients) > 0 {
 		go e.send(clients)
+	}
+}
+
+// The ping functions writes to the stream of all clients to detect stale
+// connections
+func (s *server) ping(clients []client) {
+	for _, c := range clients {
+		go func() {
+			select {
+			case c.events <- ping:
+			case <-c.done:
+			}
+		}()
 	}
 }
 

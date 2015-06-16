@@ -1,16 +1,9 @@
-/*
-Package eventsource provides an implementation to Server-sent events using
-goroutines to handle client (un)subscription and forward events to clients.
-For more information about Eventsource / SSE check the MDN documentation:
-https://developer.mozilla.org/en-US/docs/Server-sent_events/Using_server-sent_events
-*/
 package eventsource
 
 import "net/http"
 
 // An Eventsource is a high-level server abstraction. It can be used as a
-// Handler for a http route and to send events to clients. An Eventsource
-// instance MUST be created using the NewServer function. Multiple servers can
+// Handler for a http route and to send events to clients. Multiple servers can
 // coexist and be used on more than one end-point.
 type Eventsource struct {
 	server
@@ -20,33 +13,50 @@ type Eventsource struct {
 	ChanSub ChannelSubscriber
 
 	// Interface that implements what options are sent during the initial http
-	// handshaking. See DefaultHttpOptions for details.
+	// handshaking. See DefaultHttpOptions for built-in options.
 	HttpOptions HttpOptions
+
+	// Interface that implements how metrics are tracked. Defaults to
+	// StatsJSONLogger
+	Stats Stats
 }
 
 // A HijackingError is displayed when the browser doesn't support connection
 // hijacking. See http://golang.org/pkg/net/http/#Hijacker
 var HijackingError = "webserver doesn't support hijacking"
 
-// The NewServer function configures a new instace of the Eventsource, creating
-// all necessary channels and spawning a new goroutine to listen to commands.
-func NewServer() *Eventsource {
-	e := &Eventsource{
-		server: server{
-			add:    make(chan client),
-			remove: make(chan client),
-			local:  make(chan Event),
-			global: make(chan Event),
-		},
-		ChanSub: NoChannels{},
-		HttpOptions: DefaultHttpOptions{
+// Global stats tracking
+var stats Stats
+
+// The Start function sets all undefined options to their defaults and configure
+// the underlining server to start listening to events
+func (es *Eventsource) Start() {
+	if es.ChanSub == nil {
+		es.ChanSub = NoChannels{}
+	}
+
+	if es.HttpOptions == nil {
+		es.HttpOptions = DefaultHttpOptions{
 			Retry:             2000,
 			Cors:              true,
 			OldBrowserSupport: true,
-		},
+		}
 	}
-	go e.listen()
-	return e
+
+	if es.Stats == nil {
+		es.Stats = &StatsJSONLogger{}
+	}
+	// push to global state
+	stats = es.Stats
+
+	es.server = server{
+		add:    make(chan client),
+		remove: make(chan client),
+		local:  make(chan Event),
+		global: make(chan Event),
+	}
+
+	go es.server.listen()
 }
 
 // The send function sends an event to all clients that have  subscribed to one
@@ -91,7 +101,7 @@ func (e *Eventsource) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	c := client{
 		conn:     conn,
 		channels: channels,
-		events:   make(chan []byte),
+		events:   make(chan payload),
 		done:     make(chan bool),
 	}
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/base64"
+	"time"
 )
 
 // An event holds the data necessary to build the actual text/stream event
@@ -17,15 +18,29 @@ type Event struct {
 // The send function receives a list of clients and send to them the text/stream
 // event to be written on the client's connection
 func (e Event) send(clients []client) {
-	data := e.bytes()
+	size := len(clients)
+	done := make(chan status, size)
+	p := payload{data: e.bytes(), done: done}
+
+	start := time.Now()
 	for _, c := range clients {
 		go func() {
 			select {
-			case c.events <- data:
+			case c.events <- p:
 			case <-c.done:
+				p.done <- status{sent: false}
 			}
 		}()
 	}
+
+	for i := 0; i < size; i++ {
+		s := <-done
+		if s.sent {
+			stats.EventSent(EventStats{Start: s.start, End: s.end, Event: e})
+		}
+	}
+
+	stats.EventEnd(EventStats{Start: start, End: time.Now(), Event: e})
 }
 
 // The bytes function returns the text/stream message to be sent to the client
