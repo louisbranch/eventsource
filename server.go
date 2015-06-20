@@ -97,12 +97,12 @@ func (s *server) broadcast(clients []client, e Event) {
 // connections
 func (s *server) ping(clients []client) {
 	for _, c := range clients {
-		go func() {
+		go func(c client) {
 			select {
 			case c.events <- ping:
 			case <-c.done:
 			}
-		}()
+		}(c)
 	}
 }
 

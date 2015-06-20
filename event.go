@@ -24,13 +24,13 @@ func (e Event) send(clients []client) {
 
 	start := time.Now()
 	for _, c := range clients {
-		go func() {
+		go func(c client) {
 			select {
 			case c.events <- p:
 			case <-c.done:
 				p.done <- status{sent: false}
 			}
-		}()
+		}(c)
 	}
 
 	for i := 0; i < size; i++ {
