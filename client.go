@@ -40,12 +40,16 @@ func (c *client) listen(remove chan<- client) {
 			c.conn.Close()
 			return
 		}
-		c.conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+
 		start := time.Now()
+		c.conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
 		_, err := c.conn.Write(e.data)
-		if err == nil && e.done != nil {
-			e.done <- status{start: start, end: time.Now(), sent: true}
-		} else {
+
+		if e.done != nil {
+			e.done <- status{start: start, end: time.Now(), sent: err == nil}
+		}
+
+		if err != nil {
 			remove <- *c
 			c.conn.Close()
 			close(c.done)
