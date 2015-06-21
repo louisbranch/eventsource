@@ -16,17 +16,10 @@ type client struct {
 }
 
 // A payload contains the event data that must be written to the client
-// connection and a done channel to signalize the end of the write process
+// connection and a done channel to signalize the end of the writing process
 type payload struct {
 	data []byte
-	done chan status
-}
-
-// A status tracks the client connection write state
-type status struct {
-	start time.Time
-	end   time.Time
-	sent  bool
+	done chan time.Duration
 }
 
 // The listen function receives incoming events on the events channel, writing
@@ -46,7 +39,11 @@ func (c *client) listen(remove chan<- client) {
 		_, err := c.conn.Write(e.data)
 
 		if e.done != nil {
-			e.done <- status{start: start, end: time.Now(), sent: err == nil}
+			if err == nil {
+				e.done <- time.Since(start)
+			} else {
+				e.done <- 0
+			}
 		}
 
 		if err != nil {

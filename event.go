@@ -16,31 +16,30 @@ type Event struct {
 }
 
 // The send function receives a list of clients and send to them the text/stream
-// event to be written on the client's connection
-func (e Event) send(clients []client) {
+// event to be written on the client's connection. It returns the time spent to
+// write to each client. 0 duration means an error.
+func (e Event) send(clients []client) []time.Duration {
+	durations := []time.Duration{}
 	size := len(clients)
-	done := make(chan status, size)
+	done := make(chan time.Duration, size)
 	p := payload{data: e.bytes(), done: done}
 
-	start := time.Now()
 	for _, c := range clients {
 		go func(c client) {
 			select {
 			case c.events <- p:
 			case <-c.done:
-				p.done <- status{sent: false}
+				p.done <- 0
 			}
 		}(c)
 	}
 
 	for i := 0; i < size; i++ {
 		s := <-done
-		if s.sent {
-			stats.EventSent(EventStats{Start: s.start, End: s.end, Event: e})
-		}
+		durations = append(durations, s)
 	}
 
-	stats.EventEnd(EventStats{Start: start, End: time.Now(), Event: e})
+	return durations
 }
 
 // The bytes function returns the text/stream message to be sent to the client
