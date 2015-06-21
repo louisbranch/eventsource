@@ -15,18 +15,11 @@ type Eventsource struct {
 	// Interface that implements what options are sent during the initial http
 	// handshaking. See DefaultHttpOptions for built-in options.
 	HttpOptions HttpOptions
-
-	// Interface that implements how metrics are tracked. Defaults to
-	// StatsJSONLogger
-	Stats Stats
 }
 
 // A HijackingError is displayed when the browser doesn't support connection
 // hijacking. See http://golang.org/pkg/net/http/#Hijacker
 var HijackingError = "webserver doesn't support hijacking"
-
-// Global stats tracking
-var stats Stats
 
 // The Start function sets all undefined options to their defaults and configure
 // the underlining server to start listening to events
@@ -42,12 +35,6 @@ func (es *Eventsource) Start() {
 			OldBrowserSupport: true,
 		}
 	}
-
-	if es.Stats == nil {
-		es.Stats = &StatsJSONLogger{}
-	}
-	// push to global state
-	stats = es.Stats
 
 	es.server = server{
 		add:    make(chan client),

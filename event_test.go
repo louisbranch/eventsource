@@ -112,11 +112,11 @@ func TestDefaultEventClientsWithNoChannel(t *testing.T) {
 	client2 := client{channels: []string{"c", "d"}}
 	e := DefaultEvent{}
 
-	expected := []client{client1, client2}
+	expecting := []client{client1, client2}
 	result := e.Clients([]client{client1, client2})
 
-	if !reflect.DeepEqual(expected, result) {
-		t.Errorf("expected:\n%v\nto be equal to:\n%v\n", expected, result)
+	if !reflect.DeepEqual(expecting, result) {
+		t.Errorf("expected:\n%v\nto be equal to:\n%v\n", expecting, result)
 	}
 }
 
