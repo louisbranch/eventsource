@@ -4,49 +4,37 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/base64"
-	"time"
+	"strconv"
 )
 
+type Event interface {
+	// The Bytes function returns the data to be written on the clients connection
+	Bytes() []byte
+
+	// The Clients function receives a list of clients and return a filtered list
+	// of clients
+	Clients([]client) []client
+}
+
 // An event holds the data necessary to build the actual text/stream event
-type Event struct {
+type DefaultEvent struct {
+	Id       int
 	Name     string
 	Message  []byte
 	Channels []string
 	Compress bool
 }
 
-// The send function receives a list of clients and send to them the text/stream
-// event to be written on the client's connection. It returns the time spent to
-// write to each client. 0 duration means an error.
-func (e Event) send(clients []client) []time.Duration {
-	durations := []time.Duration{}
-	size := len(clients)
-	done := make(chan time.Duration, size)
-	p := payload{data: e.bytes(), done: done}
-
-	for _, c := range clients {
-		go func(c client) {
-			select {
-			case c.events <- p:
-			case <-c.done:
-				p.done <- 0
-			}
-		}(c)
-	}
-
-	for i := 0; i < size; i++ {
-		s := <-done
-		durations = append(durations, s)
-	}
-
-	return durations
-}
-
 // The bytes function returns the text/stream message to be sent to the client
 // If the event has name, it is added first, then the data. Optionally, the data
 // can be compressed using zlib
-func (e Event) bytes() []byte {
+func (e DefaultEvent) Bytes() []byte {
 	var buf bytes.Buffer
+	if e.Id > 0 {
+		buf.WriteString("id: ")
+		buf.WriteString(strconv.Itoa(e.Id))
+		buf.WriteString("\n")
+	}
 	if e.Name != "" {
 		buf.WriteString("event: ")
 		buf.WriteString(e.Name)
@@ -54,8 +42,7 @@ func (e Event) bytes() []byte {
 	}
 	buf.WriteString("data: ")
 	if e.Compress {
-		deflated := deflate(e.Message)
-		buf.WriteString(deflated)
+		buf.WriteString(e.deflate())
 	} else {
 		buf.Write(e.Message)
 	}
@@ -63,12 +50,43 @@ func (e Event) bytes() []byte {
 	return buf.Bytes()
 }
 
-// The deflate function compress a slice of bytes using zlib default compression
-// and returns a base64 encoded string
-func deflate(message []byte) string {
+// The Clients function selects clients that have at least one channel in
+// common with the event or all clients if the event has no channel
+func (e DefaultEvent) Clients(clients []client) []client {
+	if len(e.Channels) == 0 {
+		return clients
+	}
+	var subscribed []client
+	for _, client := range clients {
+	channels:
+		for _, c := range client.channels {
+			for _, s := range e.Channels {
+				if c == s {
+					subscribed = append(subscribed, client)
+					break channels
+				}
+			}
+		}
+	}
+	return subscribed
+}
+
+// The deflate function compress the event message using zlib default
+// compression and returns a base64 encoded string
+func (e DefaultEvent) deflate() string {
 	var buf bytes.Buffer
 	w := zlib.NewWriter(&buf)
-	w.Write(message)
+	w.Write(e.Message)
 	w.Close()
 	return base64.StdEncoding.EncodeToString(buf.Bytes())
+}
+
+type ping struct{}
+
+func (p ping) Bytes() []byte {
+	return []byte(":ping\n\n")
+}
+
+func (p ping) Clients(clients []client) []client {
+	return clients
 }

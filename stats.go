@@ -27,7 +27,7 @@ func (s *StatsJSONLogger) ClientsCount(count int) {
 }
 
 func (s *StatsJSONLogger) EventSent(stats EventStats) {
-	size := len(stats.Event.Message)
+	size := len(stats.Event.Bytes())
 	duration := stats.End.Sub(stats.Start).Nanoseconds()
 	json := fmt.Sprintf(`{"type": "events.sent", "size": %d, "duration": %d}`,
 		size, duration)

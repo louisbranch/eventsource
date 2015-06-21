@@ -52,25 +52,16 @@ func (es *Eventsource) Start() {
 	es.server = server{
 		add:    make(chan client),
 		remove: make(chan client),
-		local:  make(chan Event),
-		global: make(chan Event),
+		events: make(chan Event),
 	}
 
 	go es.server.listen()
 }
 
-// The send function sends an event to all clients that have  subscribed to one
-// of the channels passed.
+// The send function sends an event to clients
 func (e *Eventsource) Send(event Event) {
 	go func() {
-		e.local <- event
-	}()
-}
-
-// The broadcast function sends an event to all clients.
-func (e *Eventsource) Broadcast(event Event) {
-	go func() {
-		e.global <- event
+		e.events <- event
 	}()
 }
 

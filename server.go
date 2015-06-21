@@ -2,15 +2,12 @@ package eventsource
 
 import "time"
 
-var ping = payload{data: []byte(":ping\n\n")}
-
 // A server manages all clients, adding and removing them from the pool and
 // receiving incoming events to forward to clients
 type server struct {
 	add    chan client
 	remove chan client
-	local  chan Event
-	global chan Event
+	events chan Event
 }
 
 // The listen function is used to receive messages to add, remove and send
@@ -26,15 +23,43 @@ func (s *server) listen() {
 			clients = s.spawn(clients, c)
 		case c := <-s.remove:
 			clients = s.kill(clients, c)
-		case e := <-s.local:
-			s.send(clients, e)
-		case e := <-s.global:
-			s.broadcast(clients, e)
+		case e := <-s.events:
+			s.send(e, clients)
 		case <-hearbeat.C:
-			stats.ClientsCount(len(clients))
-			s.ping(clients)
+			s.send(ping{}, clients)
 		}
 	}
+}
+
+// The send function receives an event and a list of clients and send to them
+// the text/stream data to be written on the client's connection. It returns the
+// time spent to write to each client. 0 duration means an error.
+func (s *server) send(e Event, clients []client) []time.Duration {
+	durations := []time.Duration{}
+	clients = e.Clients(clients)
+	size := len(clients)
+	if size == 0 {
+		return durations
+	}
+	done := make(chan time.Duration, size)
+	p := payload{data: e.Bytes(), done: done}
+
+	for _, c := range clients {
+		go func(c client) {
+			select {
+			case c.events <- p:
+			case <-c.done:
+				p.done <- 0
+			}
+		}(c)
+	}
+
+	for i := 0; i < size; i++ {
+		s := <-done
+		durations = append(durations, s)
+	}
+
+	return durations
 }
 
 // The spawn function adds a new client to the clients list and launches a
@@ -70,51 +95,4 @@ func (s *server) kill(clients []client, client client) []client {
 	clients = clients[:last]
 
 	return clients
-}
-
-// The send function sends an event to all clients that have subscribed to one
-// of the event's channels.
-func (s *server) send(clients []client, e Event) {
-	var subscribed []client
-	for _, c := range clients {
-		if hasChannel(c.channels, e.Channels) {
-			subscribed = append(subscribed, c)
-		}
-	}
-	if len(subscribed) > 0 {
-		go e.send(subscribed)
-	}
-}
-
-// The broadcast function sends an event to all clients.
-func (s *server) broadcast(clients []client, e Event) {
-	if len(clients) > 0 {
-		go e.send(clients)
-	}
-}
-
-// The ping functions writes to the stream of all clients to detect stale
-// connections
-func (s *server) ping(clients []client) {
-	for _, c := range clients {
-		go func(c client) {
-			select {
-			case c.events <- ping:
-			case <-c.done:
-			}
-		}(c)
-	}
-}
-
-// The hasChannel function returns whether client and server have a channel in
-// common.
-func hasChannel(client []string, server []string) bool {
-	for _, c := range client {
-		for _, s := range server {
-			if c == s {
-				return true
-			}
-		}
-	}
-	return false
 }
