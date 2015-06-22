@@ -2,7 +2,6 @@ package eventsource
 
 import (
 	"bytes"
-	"net"
 	"reflect"
 	"testing"
 )
@@ -107,11 +106,4 @@ func TestPingClients(t *testing.T) {
 	if !reflect.DeepEqual(expecting, result) {
 		t.Errorf("expected:\n%v\ngot:\n%v\n", expecting, result)
 	}
-}
-
-func stubClient() client {
-	net.Listen("tcp4", "127.0.0.1:4000")
-	conn, _ := net.Dial("tcp4", "127.0.0.1:4000")
-	c := client{events: make(chan payload), conn: conn, done: make(chan bool)}
-	return c
 }

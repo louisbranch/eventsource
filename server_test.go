@@ -2,6 +2,7 @@ package eventsource
 
 import (
 	"bytes"
+	"net"
 	"reflect"
 	"testing"
 	"time"
@@ -108,7 +109,7 @@ func TestServerSendPayload(t *testing.T) {
 func TestServerSendDuration(t *testing.T) {
 	s := server{}
 	e := DefaultEvent{Message: message}
-	c := stubClient()
+	c := stubTCPClient()
 	go c.listen(make(chan client))
 
 	result := s.send(e, []client{c})
@@ -120,7 +121,7 @@ func TestServerSendDuration(t *testing.T) {
 func TestServerSendError(t *testing.T) {
 	s := server{}
 	e := DefaultEvent{Message: message}
-	c := stubClient()
+	c := stubTCPClient()
 	close(c.done)
 	result := s.send(e, []client{c})
 
@@ -128,4 +129,11 @@ func TestServerSendError(t *testing.T) {
 	if !reflect.DeepEqual(expecting, result) {
 		t.Errorf("expected:\n%s\ngot:\n%s\n", expecting, result)
 	}
+}
+
+func stubTCPClient() client {
+	net.Listen("tcp4", "127.0.0.1:4000")
+	conn, _ := net.Dial("tcp4", "127.0.0.1:4000")
+	c := client{events: make(chan payload), conn: conn, done: make(chan bool)}
+	return c
 }
