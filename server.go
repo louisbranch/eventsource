@@ -5,18 +5,17 @@ import "time"
 // A server manages all clients, adding and removing them from the pool and
 // receiving incoming events to forward to clients
 type server struct {
-	add    chan client
-	remove chan client
-	events chan Event
+	add      chan client
+	remove   chan client
+	events   chan Event
+	hearbeat time.Duration
 }
 
 // The listen function is used to receive messages to add, remove and send
-// events to clients. Every 30 seconds it sends a ping message to all
-// clients to detect stale connections
+// events to clients. Every X seconds it sends a ping message to all clients to
+// detect stale connections
 func (s *server) listen() {
 	var clients []client
-	hearbeat := time.NewTicker(30 * time.Second)
-
 	for {
 		select {
 		case c := <-s.add:
@@ -25,7 +24,7 @@ func (s *server) listen() {
 			clients = s.kill(clients, c)
 		case e := <-s.events:
 			s.send(e, clients)
-		case <-hearbeat.C:
+		case <-time.Tick(s.hearbeat):
 			s.send(ping{}, clients)
 		}
 	}

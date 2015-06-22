@@ -59,7 +59,7 @@ func (h DefaultHttpOptions) Bytes(req *http.Request) []byte {
 		buf.WriteString(padding)
 	}
 	if h.Retry > 0 {
-		retry := fmt.Sprintf("retry: %d\n", h.Retry)
+		retry := fmt.Sprintf("retry: %d\n\n", h.Retry)
 		buf.WriteString(retry)
 	}
 	return buf.Bytes()

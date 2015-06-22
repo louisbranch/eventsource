@@ -10,47 +10,6 @@ import (
 var message []byte = []byte("{id: 1}")
 var deflated = "eJyqzkyxUjCsBQQAAP//CfUCUQ=="
 
-/*
-func TestDefaultEventSendToClient(t *testing.T) {
-	e := DefaultEvent{Message: message}
-	c := client{events: make(chan payload)}
-	go c.listen(make(chan client))
-	go e.send([]client{c})
-	p := <-c.events
-
-	expecting := e.bytes()
-	result := p.data
-
-	if !bytes.Equal(expecting, result) {
-		t.Errorf("expected:\n%s\ngot:\n%s\n", expecting, result)
-	}
-}
-
-func TestDefaultEventSendDuration(t *testing.T) {
-	e := DefaultEvent{Message: message}
-	c := stubClient()
-	go c.listen(make(chan client))
-
-	result := e.send([]client{c})
-	if len(result) != 1 {
-		t.Errorf("expected: 1 duration%s\ngot:\n%s\n", result)
-	}
-}
-
-func TestDefaultEventSendError(t *testing.T) {
-	e := DefaultEvent{Message: message}
-	c := stubClient()
-	close(c.done)
-	result := e.send([]client{c})
-
-	expecting := []time.Duration{0}
-	if !reflect.DeepEqual(expecting, result) {
-		t.Errorf("expected:\n%s\ngot:\n%s\n", expecting, result)
-	}
-}
-
-*/
-
 func TestDefaultEventBytesWithId(t *testing.T) {
 	expecting := []byte("id: 1\ndata: {id: 1}\n\n")
 	e := DefaultEvent{

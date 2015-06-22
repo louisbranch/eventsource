@@ -32,6 +32,7 @@ Cache-Control: no-cache
 Connection: keep-alive
 
 retry: 2000
+
 `)
 
 	var req, _ = http.NewRequest("GET", "/", nil)

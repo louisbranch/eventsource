@@ -10,28 +10,28 @@ var req, _ = http.NewRequest("GET", "/?channels=a,b,c", nil)
 
 func TestNoChannelsParseRequest(t *testing.T) {
 	sub := NoChannels{}
-	results := sub.ParseRequest(req)
+	result := sub.ParseRequest(req)
 
-	if len(results) > 0 {
-		t.Errorf("expected:\n%q\nto be empty\n", results)
+	if len(result) > 0 {
+		t.Errorf("expected:\n%q\nto be empty\n", result)
 	}
 }
 
 func TestQueryStringChannelsParseRequestEmpty(t *testing.T) {
 	sub := QueryStringChannels{}
-	results := sub.ParseRequest(req)
+	result := sub.ParseRequest(req)
 
-	if len(results) > 0 {
-		t.Errorf("expected:\n%q\nto be empty\n", results)
+	if len(result) > 0 {
+		t.Errorf("expected:\n%q\nto be empty\n", result)
 	}
 }
 
 func TestQueryStringChannelsParseRequest(t *testing.T) {
 	sub := QueryStringChannels{Name: "channels"}
-	results := sub.ParseRequest(req)
-	expected := []string{"a", "b", "c"}
+	result := sub.ParseRequest(req)
+	expecting := []string{"a", "b", "c"}
 
-	if !reflect.DeepEqual(expected, results) {
-		t.Errorf("expected:\n%q\nto be equal to:\n%q\n", results, expected)
+	if !reflect.DeepEqual(expecting, result) {
+		t.Errorf("expected:\n%q\nto be equal to:\n%q\n", result, expecting)
 	}
 }
