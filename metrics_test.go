@@ -13,8 +13,9 @@ func TestDefaultMetricsEventDone(t *testing.T) {
 	log.SetOutput(buf)
 	m := DefaultMetrics{}
 	e := DefaultEvent{}
-	d := []time.Duration{1, 2, 3, 4, 5, 6}
-	m.EventDone(e, d)
+	var d time.Duration
+	c := []time.Duration{1, 2, 3, 4, 5, 6}
+	m.EventDone(e, d, c)
 	line := buf.String()
 	result := line[0 : len(line)-1]
 	expecting := "Event completed - clients 6, avg time 3.50"

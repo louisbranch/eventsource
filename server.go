@@ -25,8 +25,9 @@ func (s server) listen() {
 			clients = s.kill(clients, c)
 		case e := <-s.events:
 			go func() {
+				start := time.Now()
 				durations := send(e, clients)
-				s.metrics.EventDone(e, durations)
+				s.metrics.EventDone(e, time.Since(start), durations)
 			}()
 		case <-time.Tick(s.hearbeat):
 			go func() {

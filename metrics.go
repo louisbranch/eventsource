@@ -7,7 +7,7 @@ import (
 
 type Metrics interface {
 	ClientCount(int)
-	EventDone(Event, []time.Duration)
+	EventDone(Event, time.Duration, []time.Duration)
 }
 
 // A DefaultMetrics implements the Metrics interface and does nothing. Useful
@@ -18,7 +18,7 @@ type NoopMetrics struct{}
 func (NoopMetrics) ClientCount(int) {}
 
 // The EventDone function does nothing.
-func (NoopMetrics) EventDone(Event, []time.Duration) {}
+func (NoopMetrics) EventDone(Event, time.Duration, []time.Duration) {}
 
 // A DefaultMetrics implements the Metrics interface and logs events to the
 // stdout.
@@ -29,7 +29,7 @@ func (DefaultMetrics) ClientCount(int) {}
 
 // The EventDone function logs to stdout the avg time an event to be sent to
 // clients. Clients with error are ignored.
-func (m DefaultMetrics) EventDone(e Event, durations []time.Duration) {
+func (m DefaultMetrics) EventDone(e Event, duration time.Duration, durations []time.Duration) {
 	var sum float64
 	var count float64
 	var avg float64
