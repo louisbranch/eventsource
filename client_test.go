@@ -62,7 +62,7 @@ func TestClientListenConnError(t *testing.T) {
 	go func() {
 		removed := <-remove
 		if !reflect.DeepEqual(c, removed) {
-			t.Errorf("expected:\n%s\ngot:\n%s\n", c, removed)
+			t.Errorf("expected:\n%v\ngot:\n%v\n", c, removed)
 		}
 	}()
 	_, ok := <-c.done

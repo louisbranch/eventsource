@@ -10,11 +10,14 @@ type Eventsource struct {
 
 	// Interface that implements how channels are assigned to clients. It
 	// defaults to NoChannels, meaning all events must be global.
-	ChanSub ChannelSubscriber
+	ChannelSubscriber
 
 	// Interface that implements what options are sent during the initial http
 	// handshaking. See DefaultHttpOptions for built-in options.
-	HttpOptions HttpOptions
+	HttpOptions
+
+	// Interface that implements basic metrics for events
+	Metrics
 }
 
 // A HijackingError is displayed when the browser doesn't support connection
@@ -24,8 +27,8 @@ var HijackingError = "webserver doesn't support hijacking"
 // The Start function sets all undefined options to their defaults and configure
 // the underlining server to start listening to events
 func (es *Eventsource) Start() {
-	if es.ChanSub == nil {
-		es.ChanSub = NoChannels{}
+	if es.ChannelSubscriber == nil {
+		es.ChannelSubscriber = NoChannels{}
 	}
 
 	if es.HttpOptions == nil {
@@ -36,10 +39,15 @@ func (es *Eventsource) Start() {
 		}
 	}
 
+	if es.Metrics == nil {
+		es.Metrics = DefaultMetrics{}
+	}
+
 	es.server = server{
-		add:    make(chan client),
-		remove: make(chan client),
-		events: make(chan Event),
+		add:     make(chan client),
+		remove:  make(chan client),
+		events:  make(chan Event),
+		metrics: es.Metrics,
 	}
 
 	go es.server.listen()
@@ -47,9 +55,7 @@ func (es *Eventsource) Start() {
 
 // The send function sends an event to clients
 func (e *Eventsource) Send(event Event) {
-	go func() {
-		e.events <- event
-	}()
+	e.events <- event
 }
 
 // ServeHTTP implements the http handle interface.
@@ -72,9 +78,10 @@ func (e *Eventsource) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	_, err = conn.Write(options)
 	if err != nil {
 		conn.Close()
+		return
 	}
 
-	channels := e.ChanSub.ParseRequest(req)
+	channels := e.ChannelSubscriber.ParseRequest(req)
 
 	c := client{
 		conn:     conn,

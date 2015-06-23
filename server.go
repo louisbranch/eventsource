@@ -9,12 +9,13 @@ type server struct {
 	remove   chan client
 	events   chan Event
 	hearbeat time.Duration
+	metrics  Metrics
 }
 
 // The listen function is used to receive messages to add, remove and send
 // events to clients. Every X seconds it sends a ping message to all clients to
 // detect stale connections
-func (s *server) listen() {
+func (s server) listen() {
 	var clients []client
 	for {
 		select {
@@ -23,17 +24,24 @@ func (s *server) listen() {
 		case c := <-s.remove:
 			clients = s.kill(clients, c)
 		case e := <-s.events:
-			s.send(e, clients)
+			go func() {
+				durations := send(e, clients)
+				s.metrics.EventDone(e, durations)
+			}()
 		case <-time.Tick(s.hearbeat):
-			s.send(ping{}, clients)
+			go func() {
+				durations := send(ping{}, clients)
+				s.metrics.ClientCount(len(durations))
+			}()
 		}
 	}
 }
 
 // The send function receives an event and a list of clients and send to them
-// the text/stream data to be written on the client's connection. It returns the
-// time spent to write to each client. 0 duration means an error.
-func (s *server) send(e Event, clients []client) []time.Duration {
+// the text/stream data to be written on the client's connection. It returns a
+// list of time.Duration each client took. 0 duration means that the data wasn't
+// sent.
+func send(e Event, clients []client) []time.Duration {
 	durations := []time.Duration{}
 	clients = e.Clients(clients)
 	size := len(clients)
@@ -54,17 +62,16 @@ func (s *server) send(e Event, clients []client) []time.Duration {
 	}
 
 	for i := 0; i < size; i++ {
-		s := <-done
-		durations = append(durations, s)
+		d := <-done
+		durations = append(durations, d)
 	}
-
 	return durations
 }
 
 // The spawn function adds a new client to the clients list and launches a
 // goroutine for the client to listen to incoming messages. The client receives
 // the remove channel necessary to unsubscribe itself from the server.
-func (s *server) spawn(clients []client, c client) []client {
+func (s server) spawn(clients []client, c client) []client {
 	go c.listen(s.remove)
 	clients = append(clients, c)
 	return clients
@@ -73,7 +80,7 @@ func (s *server) spawn(clients []client, c client) []client {
 // The kill function removes a client from the client list by comparing their
 // events channel. The client is removed by being moved to the end of the list
 // and reducing the slice length.
-func (s *server) kill(clients []client, client client) []client {
+func (s server) kill(clients []client, client client) []client {
 	index := -1
 	for i, c := range clients {
 		if client.events == c.events {
