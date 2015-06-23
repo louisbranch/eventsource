@@ -10,13 +10,21 @@ type Metrics interface {
 	EventDone(Event, []time.Duration)
 }
 
+// A DefaultMetrics implements the Metrics interface and does nothing. Useful
+// for disable metrics.
 type NoopMetrics struct{}
 
-func (NoopMetrics) ClientCount(int)                  {}
+// The ClientCount function does nothing.
+func (NoopMetrics) ClientCount(int) {}
+
+// The EventDone function does nothing.
 func (NoopMetrics) EventDone(Event, []time.Duration) {}
 
+// A DefaultMetrics implements the Metrics interface and logs events to the
+// stdout.
 type DefaultMetrics struct{}
 
+// The ClientCount function does nothing.
 func (DefaultMetrics) ClientCount(int) {}
 
 // The EventDone function logs to stdout the avg time an event to be sent to
@@ -34,5 +42,5 @@ func (m DefaultMetrics) EventDone(e Event, durations []time.Duration) {
 	if count > 0 {
 		avg = sum / count
 	}
-	log.Printf("Event completed - clients %.f, avg time %f\n", count, avg)
+	log.Printf("Event completed - clients %.f, avg time %.2f\n", count, avg)
 }
