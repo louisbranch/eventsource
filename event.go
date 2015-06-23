@@ -12,7 +12,7 @@ type Event interface {
 	Bytes() []byte
 
 	// The Clients function receives a list of clients and return a filtered list
-	// of clients
+	// of clients.
 	Clients([]client) []client
 }
 
@@ -25,9 +25,9 @@ type DefaultEvent struct {
 	Compress bool
 }
 
-// The bytes function returns the text/stream message to be sent to the client
+// The bytes function returns the text/stream message to be sent to the client.
 // If the event has name, it is added first, then the data. Optionally, the data
-// can be compressed using zlib
+// can be compressed using zlib.
 func (e DefaultEvent) Bytes() []byte {
 	var buf bytes.Buffer
 	if e.Id > 0 {
@@ -51,7 +51,7 @@ func (e DefaultEvent) Bytes() []byte {
 }
 
 // The Clients function selects clients that have at least one channel in
-// common with the event or all clients if the event has no channel
+// common with the event or all clients if the event has no channel.
 func (e DefaultEvent) Clients(clients []client) []client {
 	if len(e.Channels) == 0 {
 		return clients
@@ -72,7 +72,7 @@ func (e DefaultEvent) Clients(clients []client) []client {
 }
 
 // The deflate function compress the event message using zlib default
-// compression and returns a base64 encoded string
+// compression and returns a base64 encoded string.
 func (e DefaultEvent) deflate() string {
 	var buf bytes.Buffer
 	w := zlib.NewWriter(&buf)
