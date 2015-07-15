@@ -29,7 +29,7 @@ func (DefaultMetrics) ClientCount(int) {}
 
 // The EventDone function logs to stdout the avg time an event to be sent to
 // clients. Clients with error are ignored.
-func (m DefaultMetrics) EventDone(e Event, duration time.Duration, durations []time.Duration) {
+func (DefaultMetrics) EventDone(e Event, _ time.Duration, durations []time.Duration) {
 	var sum float64
 	var count float64
 	var avg float64

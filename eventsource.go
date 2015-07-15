@@ -54,14 +54,14 @@ func (es *Eventsource) Start() {
 }
 
 // The send function sends an event to clients
-func (e *Eventsource) Send(event Event) {
-	e.events <- event
+func (es *Eventsource) Send(event Event) {
+	es.events <- event
 }
 
 // ServeHTTP implements the http handle interface.
 // If the connection supports hijacking, it sends an initial header and body to
 // switch to the text/stream protocol and start streaming.
-func (e *Eventsource) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+func (es *Eventsource) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	hj, ok := res.(http.Hijacker)
 	if !ok {
 		http.Error(res, HijackingError, http.StatusInternalServerError)
@@ -74,14 +74,14 @@ func (e *Eventsource) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	options := e.HttpOptions.Bytes(req)
+	options := es.HttpOptions.Bytes(req)
 	_, err = conn.Write(options)
 	if err != nil {
 		conn.Close()
 		return
 	}
 
-	channels := e.ChannelSubscriber.ParseRequest(req)
+	channels := es.ChannelSubscriber.ParseRequest(req)
 
 	c := client{
 		conn:     conn,
@@ -90,5 +90,5 @@ func (e *Eventsource) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		done:     make(chan bool),
 	}
 
-	e.server.add <- c
+	es.server.add <- c
 }

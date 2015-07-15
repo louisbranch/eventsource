@@ -59,9 +59,9 @@ func (e DefaultEvent) Clients(clients []client) []client {
 	var subscribed []client
 	for _, client := range clients {
 	channels:
-		for _, c := range client.channels {
-			for _, s := range e.Channels {
-				if c == s {
+		for _, cChans := range client.channels {
+			for _, eChans := range e.Channels {
+				if cChans == eChans {
 					subscribed = append(subscribed, client)
 					break channels
 				}
@@ -83,10 +83,10 @@ func (e DefaultEvent) deflate() string {
 
 type ping struct{}
 
-func (p ping) Bytes() []byte {
+func (ping) Bytes() []byte {
 	return []byte(":ping\n\n")
 }
 
-func (p ping) Clients(clients []client) []client {
+func (ping) Clients(clients []client) []client {
 	return clients
 }
