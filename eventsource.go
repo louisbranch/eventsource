@@ -1,6 +1,9 @@
 package eventsource
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
 // An Eventsource is a high-level server abstraction. It can be used as a
 // Handler for a http route and to send events to clients. Multiple servers can
@@ -44,10 +47,11 @@ func (es *Eventsource) Start() {
 	}
 
 	es.server = server{
-		add:     make(chan client),
-		remove:  make(chan client),
-		events:  make(chan Event),
-		metrics: es.Metrics,
+		add:      make(chan client),
+		remove:   make(chan client),
+		events:   make(chan Event),
+		hearbeat: 30 * time.Second,
+		metrics:  es.Metrics,
 	}
 
 	go es.server.listen()
