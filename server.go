@@ -17,6 +17,7 @@ type server struct {
 // detect stale connections
 func (s server) listen() {
 	var clients []client
+	tick := time.Tick(s.hearbeat)
 	for {
 		select {
 		case c := <-s.add:
@@ -29,7 +30,7 @@ func (s server) listen() {
 				durations := send(e, clients)
 				s.metrics.EventDone(e, time.Since(start), durations)
 			}()
-		case <-time.Tick(s.hearbeat):
+		case <-tick:
 			go func() {
 				durations := send(ping{}, clients)
 				s.metrics.ClientCount(len(durations))
