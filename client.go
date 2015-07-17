@@ -35,7 +35,7 @@ func (c *client) listen(remove chan<- client) {
 		}
 
 		start := time.Now()
-		c.conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+		c.conn.SetWriteDeadline(time.Now().Add(10 * time.Millisecond))
 		_, err := c.conn.Write(e.data)
 
 		if e.done != nil {
