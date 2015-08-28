@@ -6,13 +6,13 @@ import (
 	"testing"
 )
 
-var message []byte = []byte("{id: 1}")
+var message = []byte("{id: 1}")
 var deflated = "eJyqzkyxUjCsBQQAAP//CfUCUQ=="
 
-func TestDefaultEventBytesWithId(t *testing.T) {
+func TestDefaultEventBytesWithID(t *testing.T) {
 	expecting := []byte("id: 1\ndata: {id: 1}\n\n")
 	e := DefaultEvent{
-		Id:      1,
+		ID:      1,
 		Message: message,
 	}
 	result := e.Bytes()

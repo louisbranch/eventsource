@@ -27,8 +27,8 @@ type Eventsource struct {
 // hijacking. See http://golang.org/pkg/net/http/#Hijacker
 var HijackingError = "webserver doesn't support hijacking"
 
-// The Start function sets all undefined options to their defaults and configure
-// the underlining server to start listening to events
+// Start sets all undefined options to their defaults and configure the
+// underlining server to start listening to events
 func (es *Eventsource) Start() {
 	if es.ChannelSubscriber == nil {
 		es.ChannelSubscriber = NoChannels{}
@@ -57,7 +57,7 @@ func (es *Eventsource) Start() {
 	go es.server.listen()
 }
 
-// The send function sends an event to clients
+// Send forwards an event to clients
 func (es *Eventsource) Send(event Event) {
 	es.events <- event
 }

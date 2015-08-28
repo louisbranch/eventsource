@@ -12,7 +12,7 @@ type server struct {
 	metrics  Metrics
 }
 
-// The listen function is used to receive messages to add, remove and send
+// The listen method is used to receive messages to add, remove and send
 // events to clients. Every X seconds it sends a ping message to all clients to
 // detect stale connections
 func (s server) listen() {
@@ -39,9 +39,9 @@ func (s server) listen() {
 	}
 }
 
-// The send function receives an event and a list of clients and send to them
-// the text/stream data to be written on the client's connection. It returns a
-// list of time.Duration each client took. 0 duration means that the data wasn't
+// send receives an event and a list of clients and send to them the
+// text/stream data to be written on the client's connection. It returns a list
+// of time.Duration each client took. 0 duration means that the data wasn't
 // sent.
 func send(e Event, clients []client) []time.Duration {
 	durations := []time.Duration{}
@@ -70,18 +70,18 @@ func send(e Event, clients []client) []time.Duration {
 	return durations
 }
 
-// The spawn function adds a new client to the clients list and launches a
-// goroutine for the client to listen to incoming messages. The client receives
-// the remove channel necessary to unsubscribe itself from the server.
+// The spawn adds a new client to the clients list and launches a goroutine for
+// the client to listen to incoming messages. The client receives the remove
+// channel necessary to unsubscribe itself from the server.
 func (s server) spawn(clients []client, c client) []client {
 	go c.listen(s.remove)
 	clients = append(clients, c)
 	return clients
 }
 
-// The kill function removes a client from the client list by comparing their
-// events channel. The client is removed by being moved to the end of the list
-// and reducing the slice length.
+// The kill removes a client from the client list by comparing their events
+// channel. The client is removed by being moved to the end of the list and
+// reducing the slice length.
 func (s server) kill(clients []client, client client) []client {
 	index := -1
 	for i, c := range clients {
